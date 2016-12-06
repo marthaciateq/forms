@@ -1,0 +1,39 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> Forms Development </title>
+
+    <!--<script src="forms/ext/build/ext-modern-all-debug.js"></script>-->
+
+    
+
+
+        <script type="text/javascript">
+            var Ext = Ext || {}; // Ext namespace won't be defined yet...
+
+        // This function is called by the Microloader after it has performed basic
+        // device detection. The results are provided in the "tags" object. You can
+        // use these tags here or even add custom tags. These can be used by platform
+        // filters in your manifest or by platformConfig expressions in your app.
+        //
+        Ext.beforeLoad = function (tags) {
+            var s = location.search,  // the query string (ex "?foo=1&bar")
+                profile = 'bootstrap';
+
+            Ext.manifest = profile; // this name must match a build profile name
+
+        };
+    </script>
+
+    <!-- MICROLOADER en modo desarrollo -->
+    <script id="microloader" data-app="23acc529-1377-42c8-a3b6-19d59cd3c7cd" type="text/javascript" src="bootstrap.js"></script>
+
+</head>
+<body>
+    
+</body>
+</html>
+
