@@ -18,7 +18,7 @@ Ext.define('forms.Application', {
         'forms.view.login.login'
         , 'forms.view.main.Main'
     ]
-    
+
     , views: [
         'forms.view.login.login'
         , 'forms.view.main.Main'
@@ -50,10 +50,10 @@ Ext.define('forms.Application', {
                 connection: null
                 , code: null
                 , message: null
-                
+
             }
         };
-        
+
 
         var cm = forms.utils.common.coockiesManagement();
         var loggedIn = cm.get('loggedIn')
@@ -64,32 +64,32 @@ Ext.define('forms.Application', {
         });
 
         this.createFormsDB();
-       
+
     }
 
     , createFormsDB: function () {
         var _1KB = 1024 // bytes
-            _1MB = _1KB * 1024 // 1024 kbytes
-            DB_SIZE = _1MB * 2;  // 2 MB
+        _1MB = _1KB * 1024 // 1024 kbytes
+        DB_SIZE = _1MB * 2;  // 2 MB
 
-            forms.globals.DBManagger.connection = window.openDatabase("forms", "1.0", "forms DB", DB_SIZE);
-            forms.globals.DBManagger.connection.transaction(this.createTablesDB, this.errorCreate, this.successCreate);
+        forms.globals.DBManagger.connection = window.openDatabase("forms", "1.0", "forms DB", DB_SIZE);
+        forms.globals.DBManagger.connection.transaction(this.createTablesDB, this.errorCreate, this.successCreate);
     }
-  
+
       , createTablesDB: function (tx) {
 
-        //SQLite does not have a storage class set aside for storing dates and/or times. Instead, the built-in Date And Time Functions of SQLite are capable of storing dates and times as TEXT, REAL, or INTEGER values:
+          //SQLite does not have a storage class set aside for storing dates and/or times. Instead, the built-in Date And Time Functions of SQLite are capable of storing dates and times as TEXT, REAL, or INTEGER values:
 
-        //TEXT as ISO8601 strings ("YYYY-MM-DD HH:MM:SS.SSS").
-        //REAL as Julian day numbers, the number of days since noon in Greenwich on November 24, 4714 B.C. according to the proleptic Gregorian calendar.
-        //INTEGER as Unix Time, the number of seconds since 1970-01-01 00:00:00 UTC.
+          //TEXT as ISO8601 strings ("YYYY-MM-DD HH:MM:SS.SSS").
+          //REAL as Julian day numbers, the number of days since noon in Greenwich on November 24, 4714 B.C. according to the proleptic Gregorian calendar.
+          //INTEGER as Unix Time, the number of seconds since 1970-01-01 00:00:00 UTC.
+          
+          tx.executeSql('CREATE TABLE IF NOT EXISTS forms (idForm TEXT PRIMARY KEY, descripcion TEXT, estatus TEXT, fecha TEXT, titulo TEXT, fcaducidad TEXT);');
+          tx.executeSql('CREATE TABLE IF NOT EXISTS formsElementos (idFormElemento TEXT PRIMARY KEY, idForm TEXT, elemento INT, descripcion TEXT, orden INT, minimo INT, requerido INT);');
+          tx.executeSql('CREATE TABLE IF NOT EXISTS fElementosOpciones (idFelementoOpcion TEXT PRIMARY KEY, idFormElemento TEXT, descripcion TEXT, orden INT);');
+          tx.executeSql('CREATE TABLE IF NOT EXISTS elementsData (idFelementoOpcion TEXT, idFormElemento TEXT, descripcion TEXT, fecha TEXT);');
 
-        tx.executeSql('CREATE TABLE IF NOT EXISTS forms (idForm TEXT PRIMARY KEY, descripcion TEXT, estatus TEXT, fecha TEXT, titulo TEXT, fcaducidad TEXT);');
-        tx.executeSql('CREATE TABLE IF NOT EXISTS formsElementos (idFormElemento TEXT PRIMARY KEY, idForm TEXT, elemento INT, descripcion TEXT, orden INT, min INT, requerido INT);');
-        tx.executeSql('CREATE TABLE IF NOT EXISTS fElementosOpciones (idElementoOpcion TEXT PRIMARY KEY, idFormElemento TEXT, descripcion TEXT, orden INT);');
-        tx.executeSql('CREATE TABLE IF NOT EXISTS elementsData (idElementoOpcion TEXT, idFormElemento TEXT, descripcion TEXT, fecha TEXT);');
-
-    }
+      }
 
     , errorCreate: function (err) {
         forms.globals.DBManagger.connection = null;

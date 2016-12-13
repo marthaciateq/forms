@@ -9,9 +9,11 @@ Ext.define('forms.view.main.MainController', {
 
     alias: 'controller.main',
 
-    require:[
+    require: [
         'forms.view.form.form'
     ]
+
+
 
     /**
     * Si el usuario presionó el botón descargar, se muestra la opción para descargar el form, de otro modo se muestra el detalle del form seleccionado
@@ -42,7 +44,7 @@ Ext.define('forms.view.main.MainController', {
             form.getController().formModel = record;
             form.getController().move();
         }
-        
+
     }
 
     /**
@@ -79,8 +81,8 @@ Ext.define('forms.view.main.MainController', {
     * Obtiene un listado de los encuestas asignadas al usuario y las asigna al store de la vista principal
     */
     , getList: function () {
-       // debugger;
-        var   cm        = forms.utils.common.coockiesManagement()
+        // debugger;
+        var cm = forms.utils.common.coockiesManagement()
             , idSession = cm.get('idSession');
 
         var service = Ext.create('forms.model.model', { NAME: 'sps_forms_listar', idSession: idSession, start: 0, limit: 20 })
@@ -107,4 +109,6 @@ Ext.define('forms.view.main.MainController', {
             }
         );
     }
+
+
 });

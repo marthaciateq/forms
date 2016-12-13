@@ -30,38 +30,38 @@
                 var response = JSON.parse(responseData.responseText);
 
 
-                if (response.type !== 'EXCEPTION'){
-                
+                if (response.type !== 'EXCEPTION') {
+
                     var login = response[0][0];
 
                     //// Si los datos de usuario son correctos, se registra el inicio de sesion de manera local.
                     //if (login.idsesion !== null) {
 
-                        var cm = forms.utils.common.coockiesManagement();
+                    var cm = forms.utils.common.coockiesManagement();
 
-                        cm.set('loggedIn', true);
-                        cm.set('idSession', login.idsesion);
+                    cm.set('loggedIn', true);
+                    cm.set('idSession', login.idsesion);
 
-                        // Crear la vista principal (Listado de encuestas)
-                        var main = Ext.create('forms.view.main.Main');
+                    // Crear la vista principal (Listado de encuestas)
+                    var main = Ext.create('forms.view.main.Main');
 
 
-                        // Remove Login Window
-                        me.getView().destroy();
+                    // Remove Login Window
+                    me.getView().destroy();
 
-                        // Add the main view to the viewport
-                        Ext.Viewport.add(main);
+                    // Add the main view to the viewport
+                    Ext.Viewport.add(main);
 
-                        main.show();
+                    main.show();
                     //}
 
 
-                } else 
+                } else
                     Ext.Msg.alert('Error al iniciar sesión', 'No se ha podido iniciar sesión con los datos proporcionados, favor de verificar usuario y clave.', Ext.emptyFn);
-                
+
                 //}
 
-                
+
 
             }
             , function (response, opts) { // failure

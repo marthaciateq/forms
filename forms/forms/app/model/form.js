@@ -20,27 +20,18 @@
        , {
            name: 'estatus'
        }
-       , {
-             name: 'fecha'
-           , type: 'date'
-           , format: 'd/m/Y'
-           , submitFormat: 'd/m/Y'
-           , convert: function (v, rec) {
-               return forms.utils.common.robinParse(v, 'MS', 'd/m/Y');
-           }
-           , defaultValue: null
-       }
+
        , {
            name: 'titulo'
        }
        , {
-           name: 'fcaducidad'
+           name: 'fCaducidad'
            , type: 'date'
            , format: 'd/m/Y'
            , submitFormat: 'd/m/Y'
            , defaultValue: null
            , convert: function (v, rec) {
-               return forms.utils.common.robinParse(v, 'MS', 'd/m/Y');
+               return forms.utils.common.deserialize(v, 'MS', 'd/m/Y');
            }
        }
 
@@ -51,7 +42,7 @@
            , submitFormat: 'd/m/Y'
            , defaultValue: null
            , convert: function (v, rec) {
-               return forms.utils.common.robinParse(v, 'MS', 'd/m/Y');
+               return forms.utils.common.deserialize(v, 'MS', 'd/m/Y');
            }
        }
        , {
@@ -67,6 +58,11 @@
        // campos de referencia
        , {
            name: 'nombreCompletoCreo'
+       }
+
+       , {
+           name: 'idFormDescarga'
+           , type: 'string'
        }
     ]
 

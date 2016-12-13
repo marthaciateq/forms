@@ -11,7 +11,7 @@
         , 'Ext.field.Checkbox'
         , 'Ext.field.Text'
         , 'Ext.field.DatePicker'
-        
+
     ]
 
     , controller: 'form'
@@ -30,7 +30,7 @@
 
                 // Actualizar los datos de las respuestas
                 controller.updateData();
-                
+
                 // Moverse
                 controller.previous(this);
             }
@@ -66,7 +66,7 @@
             iconCls: 'fa fa-check-square',
             callback: function (panel) {
                 //panel.destroy();
-                panel.getController().finish();
+                panel.getController().finalize();
             }
         }
 
@@ -78,7 +78,7 @@
             callback: function (panel) {
 
                 panel.getController().close();
-                
+
             }
         }
 
@@ -94,10 +94,10 @@
             }
         }
 
-        
+
     ]
 
-  
+
     , listeners: {
         destroy: 'destroy_form'
     }

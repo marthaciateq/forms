@@ -25,16 +25,16 @@
        , {
            name: 'requerido'
            , type: 'boolean'
-        
+
        }
        , {
-           name: 'min'
+           name: 'minimo'
            , type: 'int'
        }
        , {
            name: 'orden'
            , type: 'int'
-          
+
        }
 
        , {

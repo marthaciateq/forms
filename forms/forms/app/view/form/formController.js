@@ -3,7 +3,7 @@
     alias: 'controller.form'
 
     , formModel: null
-    , page : 1
+    , page: 1
     , start: 0
     , limit: 2
     , totalRecords: 0
@@ -16,13 +16,17 @@
     * Realiza la acción MOVE del formulario
     */
     , move: function () {
+        var loadMask = new Ext.LoadMask({ message: 'Obteniendo elementos de la encuesta...' });
+
+        this.getView().setMasked(loadMask);
+
         var hasRecords = null;
 
-        this.start =  ( this.page == 1 ) ? 0 : ( this.limit * ( this.page - 1 ) );
+        this.start = (this.page == 1) ? 0 : (this.limit * (this.page - 1));
 
         // Quitar todo el contenido del form
         this.getView().removeAll();
-        
+
         // Detectar si ya hay elementos cacheados de la nueva pagina
         hasRecords = this.elements.findRecord('page', this.page, 0, false, true, true);
 
@@ -32,6 +36,8 @@
             this.getDetailsById(this.formModel);
         else
             this.getCacheData(this.page);
+
+        this.getView().setMasked(false);
     }
 
     /**
@@ -98,10 +104,10 @@
             this.getRemoteData();
     }
 
-    , isDownload: function( form ){
+    , isDownload: function (form) {
         return form.get('fechaDescarga') !== null;
     }
-    
+
     , getRemoteData: function () {
         var me = this
             , modelRequest = Ext.create('forms.model.form', { NAME: 'sps_forms_detalle_buscar', idForm: me.formModel.get('idForm'), start: this.start, limit: this.limit })
@@ -119,7 +125,9 @@
             modelRequest.getData()
             , function (response, opts) {
 
-                var data = JSON.parse(response.responseText);
+                var data = JSON.parse(forms.utils.common.deserialize(response.responseText));
+
+                //data = forms.utils.common.deserialize(data);
 
                 //me.totalRecords = data[0][0].totalRecords;
 
@@ -141,9 +149,10 @@
                 // Respuestas
                 me.optionsData.loadData(data[2], true);
 
-                // Elementos preparados para usarse como validaciones
 
-                me.allElements.loadData(data[3]);
+                // Elementos preparados para usarse como validaciones
+                if (me.start == 0)
+                    me.allElements.loadData(data[3]);
 
                 // Dibujar los controles en el formulario
                 me.renderControls(elementsStore, optionsStore);
@@ -154,7 +163,7 @@
                     me.getView().down('panelheader').getItems().getByKey('next').hide();
             }
             , function (response, opts) {
-                alert("Error no controlado");
+                alert("Error no esperado");
             });
 
         loadMask.hide();
@@ -172,7 +181,7 @@
             function (tx) {
                 var sqlCount = 'SELECT COUNT(idFormElemento) AS totalRecords FROM formsElementos WHERE idForm = ?;';
 
-                tx.executeSql(sqlCount, [idForm], 
+                tx.executeSql(sqlCount, [idForm],
                     function (tx, result) {
                         me.totalRecords = result.rows[0].totalRecords;
 
@@ -185,42 +194,42 @@
                                     '				, descripcion ' +
                                     '				, orden ' +
                                     '				, requerido ' +
-                                    '				, [min] ' +
+                                    '				, minimo ' +
                                     '				, ( SELECT COUNT(idFormElemento) FROM formsElementos AS B WHERE A.idFormElemento >= b.idFormElemento) AS row  ' +
                                     '			FROM	formsElementos AS A  ' +
                                     '			WHERE	idForm = ?  ' +
                                     '		) AS C ' +
                                     '	WHERE row > ? AND row <= ? ' +
                                     ') ' +
-                                    '	SELECT id, elemento, pid, descripcion, orden, requerido, [min], 0 AS nivel FROM myCTE ' +
+                                    '	SELECT id, elemento, pid, descripcion, orden, requerido, minimo, 0 AS nivel FROM myCTE ' +
                                     '	UNION ALL ' +
-                                    '	SELECT idElementoOpcion As id, 0 AS elemento, idformElemento AS pid, felementosOpciones.descripcion, felementosOpciones.orden, 0 AS requerido, 0 as [min], 1 AS nivel FROM felementosOpciones ' +
+                                    '	SELECT idFelementoOpcion As id, 0 AS elemento, idformElemento AS pid, felementosOpciones.descripcion, felementosOpciones.orden, 0 AS requerido, 0 as minimo, 1 AS nivel FROM felementosOpciones ' +
                                     '	INNER JOIN myCTE ON felementosOpciones.idformElemento = myCTE.id ' +
                                     '   UNION ALL ' +
-                                    '   SELECT idElementoOpcion AS id, fecha AS elemento, idFormElemento AS pid, elementsData.descripcion, 0 AS orden, 0 AS requerido, 0 AS [min], 2 AS nivel FROM elementsData ' +
+                                    '   SELECT idFelementoOpcion AS id, fecha AS elemento, idFormElemento AS pid, elementsData.descripcion, 0 AS orden, 0 AS requerido, 0 AS minimo, 2 AS nivel FROM elementsData ' +
                                     '   INNER JOIN myCTE ON elementsData.idFormElemento = myCTE.id '
 
-                       //sql = 'SELECT idElementoOpcion AS id, fecha AS elemento, idFormElemento AS pid, descripcion, 0 AS orden, 0 AS requerido, 0 AS [min], 2 AS nivel FROM elementsData'
+                        //sql = 'SELECT idElementoOpcion AS id, fecha AS elemento, idFormElemento AS pid, descripcion, 0 AS orden, 0 AS requerido, 0 AS [min], 2 AS nivel FROM elementsData'
 
                         tx.executeSql(sql, [idForm, me.start, me.start + me.limit]
                             , function (tx, records) {
                                 var model = null;
 
                                 Ext.Array.each(records.rows, function (record, index) {
-                                    switch (record.nivel){
+                                    switch (record.nivel) {
 
                                         case 0:
-                                            model = Ext.create('forms.model.element', { idFormElemento: record.id, descripcion: record.descripcion, elemento: record.elemento, requerido: record.requerido, min: record.min, orden: record.orden, page: me.page });
+                                            model = Ext.create('forms.model.element', { idFormElemento: record.id, descripcion: record.descripcion, elemento: record.elemento, requerido: record.requerido, minimo: record.minimo, orden: record.orden, page: me.page });
                                             elementsStore.add(model);
                                             break;
 
                                         case 1:
-                                            model = Ext.create('forms.model.option', {idElementoOpcion: record.id, descripcion: record.descripcion, idFormElemento: record.pid, orden: record.orden, action: ''});
+                                            model = Ext.create('forms.model.option', { idFelementoOpcion: record.id, descripcion: record.descripcion, idFormElemento: record.pid, orden: record.orden, action: '', fecha:null });
                                             optionsStore.add(model);
                                             break;
 
                                         case 2:
-                                            model = Ext.create('forms.model.option', { idElementoOpcion: record.id, descripcion: record.descripcion, idFormElemento: record.pid, fecha: new Date(record.elemento), action: '' });
+                                            model = Ext.create('forms.model.option', { idFelementoOpcion: record.id, descripcion: record.descripcion, idFormElemento: record.pid, fecha: forms.utils.common.unixTimeToDate(record.elemento), action: '' });
                                             me.optionsData.add(model);
                                             break;
                                     }
@@ -231,23 +240,63 @@
                                 me.elements.loadData(elementsStore.getRange(0, elementsStore.count()), true);
                                 me.options.loadData(optionsStore.getRange(0, optionsStore.count()), true);
 
-                                me.renderControls(elementsStore, optionsStore);
+                                // -- Elementos Requeridos, estos solo deben enviarse una vez solamente al cliente
+                                sql = "SELECT    trim(formsElementosTable.idFormElemento) AS idFormElemento " +
+                                        "		, COUNT(elementsDataTable.idFelementoOpcion)   AS numRespuestas " +
+                                        "		, requerido " +
+                                        "		, MAX( " +
+                                        "					CASE WHEN LENGTH( IFNULL(elementsDataTable.descripcion, '') + CASE WHEN elementsDataTable.fecha IS NULL THEN " +
+                                        "																					'' " +
+                                        "																				ELSE " +
+                                        "																					elementsDataTable.fecha " +
+                                        "																				END " +
+                                        "									) > 0  THEN " +
+                                        "						1 " +
+                                        "					ELSE " +
+                                        "						0 " +
+                                        "					END " +
+                                        "				) AS respuestaValida " +
+                                        "		, MAX([formsElementosTable].minimo) AS minimo " +
+                                        "FROM formsElementos AS formsElementosTable " +
+                                        "	LEFT JOIN elementsData AS elementsDataTable ON formsElementosTable.idFormElemento = elementsDataTable.idFormElemento " +
+                                        "WHERE " +
+                                        "	idForm = ? " +
+                                        "GROUP BY formsElementosTable.idFormElemento;";
+
+                                // Elementos preparados para usarse como validaciones
+                                if (me.start == 0) {
+
+                                    tx.executeSql(sql, [idForm]
+                                        , function (tx, records) {
+                                            var model = null;
+
+                                            me.allElements.loadData(records.rows);
+
+                                            me.renderControls(elementsStore, optionsStore);
+                                        }
+
+                                        , me.selectError);
+
+                                } else
+                                    me.renderControls(elementsStore, optionsStore);
+
+
                             }
-                            
-                            , me.selectError)
+
+                            , me.selectError);
 
 
-                       
+
 
                     }
-                    
+
                     , me.selectError)
             }
             , function (err) {
                 alert(err.message);
             });
 
-        
+
 
     }
     /**
@@ -283,7 +332,7 @@
 
             me.options.addFilter(optionsFilter);
 
-            optionsStore.loadData( me.options.getRange(0, me.options.count()), true );
+            optionsStore.loadData(me.options.getRange(0, me.options.count()), true);
 
         });
 
@@ -313,6 +362,7 @@
             , formPanel = this.getView()
             , defaultName = ''
             , currControl = null
+            , elemento = null
         ;
 
         // Recorrer los elementos del formulario
@@ -335,18 +385,19 @@
 
             // Generar una a una las opciones del elemento
             optionsStore.each(function (option, index) {
-                defaultName = type + option.get('idElementoOpcion');
+                defaultName = type + option.get('idFelementoOpcion');
+                elemento = element.get('elemento');
 
                 // Si la opcion se debe mostrar como un control de radio, entonces necesita un tratamiento especial, ya que todos los controles generados deben tener el mismo NAME
-                if (element.get('elemento') == forms.utils.common.CONTROL_CODES.RADIO) {
+                if (elemento == forms.utils.common.CONTROL_CODES.RADIO) {
                     elementControl = Ext.create({
                         xtype: type
                         , name: type + element.get('idFormElemento')
-                        , inputValue: option.get('idElementoOpcion')
+                        , inputValue: option.get('idFelementoOpcion')
                         , labelWidth: tm.getWidth(option.get('descripcion')) * WIDTH_FACTOR + MARGIN
                         , reference: defaultName
                     });
-                } else if (element.get('elemento') == forms.utils.common.CONTROL_CODES.DATE) {
+                } else if (elemento == forms.utils.common.CONTROL_CODES.DATE || elemento == forms.utils.common.CONTROL_CODES.TIME) {
                     elementControl = Ext.create({
                         xtype: type
                         , name: defaultName
@@ -365,8 +416,8 @@
                 elementControl.setLabel(option.get('descripcion'));
 
 
-                if (element.get('elemento') == forms.utils.common.CONTROL_CODES.TEXT || element.get('elemento') == forms.utils.common.CONTROL_CODES.DATE)
-                    elementControl.setValue(option.get('descripcion'));
+                //if (elemento == forms.utils.common.CONTROL_CODES.TEXT || elemento == forms.utils.common.CONTROL_CODES.DATE)
+                //    elementControl.setValue(option.get('descripcion'));
 
                 // Agregar el control al form
                 formPanel.add(elementControl);
@@ -385,7 +436,7 @@
             me.optionsData.each(function (option, index) {
 
                 if (option.get('action') !== DELETE) {
-                    defaultName = type + option.get('idElementoOpcion');
+                    defaultName = type + option.get('idFelementoOpcion');
 
                     currControl = me.lookupReference(defaultName)
 
@@ -404,7 +455,7 @@
         });
 
     }
-    
+
     /**
     * Remueve los stores ocupados en la vista form
     * @param {Ext.data.Store} elementsStore Contiene la lista de preguntas del form.
@@ -435,7 +486,7 @@
         ;
 
         // Cargar únicamente los elementos renderizados en el form
-        elementsStore.loadData(me.elements.getRange( me.start , (me.start + me.limit) - 1));
+        elementsStore.loadData(me.elements.getRange(me.start, (me.start + me.limit) - 1));
 
         //
         elementsStore.each(function (element, index) {
@@ -453,13 +504,13 @@
 
             if (element.get('elemento') == forms.utils.common.CONTROL_CODES.CHECK || element.get('elemento') == forms.utils.common.CONTROL_CODES.RADIO) {
 
-                
+
                 //// Si se trata de un checkbox, se remueven todas las opciones
                 //me.options.remove(me.options.getAt(indexOption));
 
                 me.options.each(function (option, index) {
 
-                    optionData = me.optionsData.getById(option.get('idElementoOpcion'));
+                    optionData = me.optionsData.getById(option.get('idFelementoOpcion'));
 
                     if (optionData)
                         if (optionData.get('action') == NEW)
@@ -470,21 +521,21 @@
                     //me.optionsData.remove(optionData);
 
                 });
-                
+
 
                 //  y se agregan las respuestas nuevas
                 me.options.each(function (option, index) {
-                    currControl = me.lookupReference( type + option.get('idElementoOpcion') );
+                    currControl = me.lookupReference(type + option.get('idFelementoOpcion'));
 
                     if (currControl.isChecked()) {
 
-                        optionData = me.optionsData.getById(option.get('idElementoOpcion'));
+                        optionData = me.optionsData.getById(option.get('idFelementoOpcion'));
                         if (optionData) {
                             if (optionData.get('action') == DELETE)
                                 optionData.set('action', ACTIVE);
                         }
                         else
-                            me.optionsData.add(Ext.create('forms.model.option', { idElementoOpcion: option.get('idElementoOpcion'), idFormElemento: option.get('idFormElemento'), orden: option.get('orden'), action: NEW }));
+                            me.optionsData.add(Ext.create('forms.model.option', { idFelementoOpcion: option.get('idFelementoOpcion'), idFormElemento: option.get('idFormElemento'), orden: option.get('orden'), action: NEW }));
                     }
                 });
 
@@ -498,22 +549,22 @@
 
                 //me.optionsData.remove(me.optionsData.getById( me.options.getAt(0).get('idElementoOpcion')));
 
-                currOption = me.optionsData.getById(me.options.getAt(0).get('idElementoOpcion'));
+                currOption = me.optionsData.getById(me.options.getAt(0).get('idFelementoOpcion'));
 
                 if (currOption == null || currOption == undefined) {
-                    
+
                     currOption = me.options.getAt(0);
 
-                    currOption = Ext.create('forms.model.option', { idElementoOpcion: currOption.get('idElementoOpcion'), idFormElemento: element.get('idFormElemento'), orden: currOption.get('orden'), action: NEW });
+                    currOption = Ext.create('forms.model.option', { idFelementoOpcion: currOption.get('idFelementoOpcion'), idFormElemento: element.get('idFormElemento'), orden: currOption.get('orden'), action: NEW });
 
                     me.optionsData.add(currOption);
                 }
 
 
-                currControl = me.lookupReference(type + currOption.get('idElementoOpcion'));
+                currControl = me.lookupReference(type + currOption.get('idFelementoOpcion'));
 
                 if (type == 'datepickerfield') {
-                    currOption.set('descripcion', Ext.Date.format(currControl.getValue(), 'd/m/Y'));
+                    currOption.set('fecha', currControl.getValue());
                     currOption.set('action', UPDATE);
                 }
                 else {
@@ -567,14 +618,14 @@
 
             if (validator.get('requerido') && validator.get('numRespuestas') == 0)
                 //invalidElements.push( { orden: element.get('orden'), descripcion: element.get('descripcion'), requerido: element.get('requerido'), min: element.get('min'), numRespuestas: validator.get('numRespuestas') });
-                invalidElements.push({ orden: index + 1, requerido: validator.get('requerido'), min: validator.get('min'), numRespuestas: validator.get('numRespuestas') });
+                invalidElements.push({ orden: index + 1, requerido: validator.get('requerido'), minimo: validator.get('minimo'), numRespuestas: validator.get('numRespuestas') });
             else
-                if (validator.get('min') > validator.get('numRespuestas')) {
+                if (validator.get('minimo') > validator.get('numRespuestas')) {
                     //invalidElements.push({ orden: element.get('orden'), descripcion: element.get('descripcion'), requerido: element.get('requerido'), min: element.get('min'), numRespuestas: validator.get('numRespuestas') });
-                    invalidElements.push({ orden: index + 1, requerido: validator.get('requerido'), min: validator.get('min'), numRespuestas: validator.get('numRespuestas') });
+                    invalidElements.push({ orden: index + 1, requerido: validator.get('requerido'), minimo: validator.get('minimo'), numRespuestas: validator.get('numRespuestas') });
                 }
 
-           
+
 
         });
 
@@ -591,7 +642,7 @@
             , option = null
         ;
 
-
+        debugger;
         // Filtro para obtener unicamente las opciones que pertenecen al elemento
         var optionsFilter = new Ext.util.Filter({
             id: 'elementsFilter'
@@ -622,7 +673,7 @@
                 option = me.optionsData.getAt(0);
 
                 // Respuestas para el elemento
-                validator.set('numRespuestas', (option.get('descripcion') == null || option.get('descripcion') == '') ? 0 : 1 );
+                validator.set('numRespuestas', ((option.get('descripcion') == null || option.get('descripcion') == '') && option.get('fecha') == null) ? 0 : 1);
 
             } else
                 // Respuestas para el elemento
@@ -632,9 +683,9 @@
         me.optionsData.clearFilter();
     }
 
-   
-    
-    , selectError: function (error) {
+
+
+    , selectError: function (tx, error) {
         alert(error.message);
     }
 
@@ -642,7 +693,7 @@
 
         var me = this;
 
-        Ext.Msg.confirm("Confirmación", "¿Desea descargar el formulario para trabajar offline?"
+        Ext.Msg.confirm("Confirmación", "¿Desea descargar el formulario para trabajar offline? Si el formulario ya ha sido descargado anteriormente, los datos seran reemplazados."
             , function (response, eOpts, msg) {
                 if (response == 'yes') {
 
@@ -650,14 +701,15 @@
                 }
             });
 
-        
+
 
     }
 
     , download: function (me) {
 
         var me = (me || this)
-            , modelRequest = Ext.create('forms.model.form', { NAME: 'sps_forms_download', idForm: me.formModel.get('idForm') })
+            , cm = forms.utils.common.coockiesManagement()
+            , modelRequest = Ext.create('forms.model.form', { NAME: 'sps_forms_download', idForm: me.formModel.get('idForm'), idSession: cm.get('idSession') })
             , elementsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.element') })
             , optionsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })
             , loadMask = new Ext.LoadMask({ message: 'Obteniendo encuesta...' });
@@ -673,122 +725,153 @@
             , function (response, opts) {
                 var data = JSON.parse(response.responseText);
 
-                var form = Ext.create('forms.model.form', data[0]);
+                if (data.type !== 'EXCEPTION') {
 
-                // Preguntas
-                elementsStore.loadData(data[1]);
+                    var form = Ext.create('forms.model.form', data[0][0]);
 
-                // Posibles respuestas
-                optionsStore.loadData(data[2]);
+                    // Preguntas
+                    elementsStore.loadData(data[1]);
 
-                // Respuestas
-                me.optionsData.loadData(data[3], true);
+                    // Posibles respuestas
+                    optionsStore.loadData(data[2]);
 
-                // GUardar los datos en la DB Local
+                    // Respuestas
+                    me.optionsData.loadData(data[3]);
 
-
-                var sql = ''
-                , unionElements = ''
-                , unionOptions = ''
-                , unionData = ''
-                , idForm = modelRequest.get('idForm').trim()
-                , arrDataValues = []
-                , elementsArguments = []
-                , optionsArguments = []
-                , dataArguments = []
-                , queryElements = 'INSERT INTO formsElementos (idFormElemento, idForm, elemento, descripcion, orden, min, requerido) VALUES'
-                , queryOptions = 'INSERT INTO fElementosOpciones (idElementoOpcion, idFormElemento, descripcion, orden) VALUES'
-                , queryData = 'INSERT INTO elementsData (idElementoOpcion, idFormElemento, descripcion, fecha) VALUES';
+                    // GUardar los datos en la DB Local
 
 
-                elementsStore.each(function (element, index) {
-                    //unionElements = unionElements + (index > 0 ? ' UNION ALL ' : '') + "SELECT " + element.get('idFormElemento').trim() + ' AS idFormElemento, ' + modelRequest.get('idForm').trim() + ' AS idForm, ' + element.get('elemento') + ' AS elemento, ' + element.get('orden') + ' AS orden, ' + element.get('min') + ' AS min, ' + element.get('requerido') + ' AS requerido'
-                    elementsArguments.push('(?, ?, ?, ?, ?, ?, ?)');
-                    arrDataValues.push(element.get('idFormElemento').trim());
-                    arrDataValues.push(modelRequest.get('idForm').trim());
-                    arrDataValues.push(element.get('elemento'));
-                    arrDataValues.push(element.get('descripcion'));
-                    arrDataValues.push(element.get('orden'));
-                    arrDataValues.push(element.get('min'));
-                    arrDataValues.push(element.get('requerido'));
-                });
-
-                queryElements += elementsArguments.join(', ');
-
-
-                forms.globals.DBManagger.connection.transaction(
-                    function (tx) {
-                        tx.executeSql(queryElements, arrDataValues
-                             , function (tx, result) {
-
-                                 // vaciar el array de valores
-                                 arrDataValues = [];
-
-                                 optionsStore.each(function (option, index) {
-                                     //unionOptions = unionOptions + (index > 0 ? ' UNION ALL ' : '') + "SELECT " + option.get('idElementoOpcion').trim() + ' AS idElementoOpcion, ' + option.get('idFormElemento').trim() + ' AS idFormElemento, ' + option.get('descripcion') + ' AS descripcion, ' + option.get('orden') + ' AS orden'
-                                     optionsArguments.push('(?, ?, ?, ?)');
-                                     arrDataValues.push(option.get('idElementoOpcion').trim());
-                                     arrDataValues.push(option.get('idFormElemento').trim());
-                                     arrDataValues.push(option.get('descripcion'));
-                                     arrDataValues.push(option.get('orden'));
-                                 });
-
-                                 queryOptions += optionsArguments.join(',');
+                    var sql = ''
+                    , unionElements = ''
+                    , unionOptions = ''
+                    , unionData = ''
+                    , idForm = modelRequest.get('idForm').trim()
+                    , arrDataValues = []
+                    , elementsArguments = []
+                    , optionsArguments = []
+                    , dataArguments = []
+                    , queryElements = 'INSERT INTO formsElementos (idFormElemento, idForm, elemento, descripcion, orden, minimo, requerido) VALUES'
+                    , queryOptions = 'INSERT INTO fElementosOpciones (idFelementoOpcion, idFormElemento, descripcion, orden) VALUES'
+                    , queryData = 'INSERT INTO elementsData (idFelementoOpcion, idFormElemento, descripcion, fecha) VALUES';
 
 
-                                 tx.executeSql(queryOptions, arrDataValues
-                                     , function (tx, result) {
+                    elementsStore.each(function (element, index) {
+                        //unionElements = unionElements + (index > 0 ? ' UNION ALL ' : '') + "SELECT " + element.get('idFormElemento').trim() + ' AS idFormElemento, ' + modelRequest.get('idForm').trim() + ' AS idForm, ' + element.get('elemento') + ' AS elemento, ' + element.get('orden') + ' AS orden, ' + element.get('min') + ' AS min, ' + element.get('requerido') + ' AS requerido'
+                        elementsArguments.push('(?, ?, ?, ?, ?, ?, ?)');
+                        arrDataValues.push(element.get('idFormElemento').trim());
+                        arrDataValues.push(modelRequest.get('idForm').trim());
+                        arrDataValues.push(element.get('elemento'));
+                        arrDataValues.push(element.get('descripcion'));
+                        arrDataValues.push(element.get('orden'));
+                        arrDataValues.push(element.get('minimo'));
+                        arrDataValues.push(element.get('requerido'));
+                    });
 
-                                         // vaciar el array de valores
-                                         arrDataValues = [];
+                    queryElements += elementsArguments.join(', ');
 
-                                         me.optionsData.each(function (option, index) {
-                                             //unionData = unionData + (index > 0 ? ' UNION ALL ' : '') + "SELECT " + option.get('idFormElemento').trim() + ' AS idFormElemento, ' + option.get('idElementoOpcion').trim() + ' AS idElementoOpcion, ' + option.get('descripcion') + ' AS descripcion, ' + (option.get('fecha') == null ? null : (forms.utils.common.dateToUnixTime(option.get('fecha')))) + ' AS fecha'
-                                             dataArguments.push('(?, ?, ?, ?)');
-                                             arrDataValues.push(option.get('idElementoOpcion').trim());
-                                             arrDataValues.push(option.get('idFormElemento').trim());
-                                             arrDataValues.push(option.get('descripcion'));
-                                             arrDataValues.push((option.get('fecha') == null ? null : (forms.utils.common.dateToUnixTime(option.get('fecha')))));
-                                         });
 
-                                         queryData += dataArguments.join(',');
+                    forms.globals.DBManagger.connection.transaction(
+                        function (tx) {
+                            tx.executeSql(queryElements, arrDataValues
+                                 , function (tx, result) {
 
-                                         tx.executeSql(queryData, arrDataValues
-                                             , function (tx, result) {
+                                     // vaciar el array de valores
+                                     arrDataValues = [];
 
-                                                 Ext.Msg.alert('Dscarga de formulario.', 'La descarga se realizó con exito.', Ext.emptyFn);
+                                     optionsStore.each(function (option, index) {
+                                         //unionOptions = unionOptions + (index > 0 ? ' UNION ALL ' : '') + "SELECT " + option.get('idElementoOpcion').trim() + ' AS idElementoOpcion, ' + option.get('idFormElemento').trim() + ' AS idFormElemento, ' + option.get('descripcion') + ' AS descripcion, ' + option.get('orden') + ' AS orden'
+                                         optionsArguments.push('(?, ?, ?, ?)');
+                                         arrDataValues.push(option.get('idFelementoOpcion').trim());
+                                         arrDataValues.push(option.get('idFormElemento').trim());
+                                         arrDataValues.push(option.get('descripcion'));
+                                         arrDataValues.push(option.get('orden'));
+                                     });
 
-                                                 me.getView().destroy();
-                                             }
+                                     queryOptions += optionsArguments.join(',');
 
-                                             , function (tx, error) {
-                                                 alert(error.message);
+
+                                     tx.executeSql(queryOptions, arrDataValues
+                                         , function (tx, result) {
+
+                                             // vaciar el array de valores
+                                             arrDataValues = [];
+
+                                             me.optionsData.each(function (option, index) {
+                                                 //unionData = unionData + (index > 0 ? ' UNION ALL ' : '') + "SELECT " + option.get('idFormElemento').trim() + ' AS idFormElemento, ' + option.get('idElementoOpcion').trim() + ' AS idElementoOpcion, ' + option.get('descripcion') + ' AS descripcion, ' + (option.get('fecha') == null ? null : (forms.utils.common.dateToUnixTime(option.get('fecha')))) + ' AS fecha'
+                                                 dataArguments.push('(?, ?, ?, ?)');
+                                                 arrDataValues.push(option.get('idFelementoOpcion').trim());
+                                                 arrDataValues.push(option.get('idFormElemento').trim());
+                                                 arrDataValues.push(option.get('descripcion'));
+                                                 arrDataValues.push((option.get('fecha') == null ? null : (forms.utils.common.dateToUnixTime(option.get('fecha')))));
                                              });
 
+                                             queryData += dataArguments.join(',');
 
-                                     }
+                                             tx.executeSql(queryData, arrDataValues
+                                                 , function (tx, result) {
+                                                     // Registrar la descarga exitosa
+                                                     var modelRequest = Ext.create('forms.model.form', { NAME: 'spp_forms_download_commit', idFormDescarga: form.get('idFormDescarga') });
 
-                                     , function (tx, error) {
-                                         alert(error.message);
-                                     });
-                             }
+                                                     forms.utils.common.request(
+                                                        modelRequest.getData()
+                                                        , function (response, opts) {
+                                                            var data = JSON.parse((response.responseText == '') ? '{}' : response.responseText);
 
-                            , function (tx, error) {
-                                alert(error.message);
-                            });
+                                                            if (data.type !== 'EXCEPTION') {
+
+                                                                me.elements.clearFilter();
+                                                                me.options.clearFilter();
+                                                                me.optionsData.clearFilter();
+                                                                me.elements.removeAll();
+                                                                me.options.removeAll();
+                                                                me.optionsData.removeAll();
 
 
-                    }
+                                                                Ext.Msg.alert('Proceso de descarga.', 'La descarga se realizó con exito.', Ext.emptyFn);
 
-                , function (error) {
-                    alert(error.message);
-                });
+                                                                me.getView().destroy();
+                                                            } else
+                                                                Ext.Msg.alert('Error al realizar la solicitud', data.mensajeUsuario, Ext.emptyFn);
+                                                        }
+                                                        , function (response, opts) {
+                                                            alert("Error no esperado");
+                                                        });
 
+
+
+                                                 }
+
+                                                 , function (tx, error) {
+                                                     alert(error.message);
+                                                 });
+
+
+                                         }
+
+                                         , function (tx, error) {
+                                             alert(error.message);
+                                         });
+                                 }
+
+                                , function (tx, error) {
+                                    alert(error.message);
+                                });
+
+
+                        }
+
+                    , function (error) {
+                        alert(error.message);
+                    });
+                } else
+                    Ext.Msg.alert('Error al realizar la solicitud', data.mensajeUsuario, Ext.emptyFn);
 
             }
             , function (response, opts) {
-                alert("Error no controlado");
+                alert("Error no esperado");
             });
+
+
 
         loadMask.hide();
     }
@@ -812,7 +895,7 @@
 
                                        // Eliminar las respuestas
                                        sql = 'DELETE FROM elementsData WHERE idFormElemento IN (SELECT idFormElemento FROM formsElementos WHERE idForm = ?)';
-                                     
+
                                        tx.executeSql(sql, [idForm]
                                            , function (tx, result) {
 
@@ -821,7 +904,8 @@
                                                tx.executeSql(sql, [idForm]
                                                    , function (tx, result) {
 
-                                                       downloadFunction.call(me);
+                                                        if (downloadFunction)
+                                                            downloadFunction.call(me);
 
                                                    }
 
@@ -858,19 +942,21 @@
 
     // Metodos para guardado
 
-    , remoteSave: function () {
-       
+    , remoteSave: function (finalizar) {
+
         var me = this
-        , loadMask = new Ext.LoadMask({ message: 'Guardado remoto...' });
+        , loadMask = new Ext.LoadMask({ message: 'Guardado remoto...' })
+        , finalizar = (finalizar || false);
 
         me.getView().add(loadMask);
 
-        var data = me.colectData();
+        var data = me.colectData(true);
 
-        if (data.length > 0) {
-            //var request = JSON.stringify(forms.utils.common.robinStringify(data));
+        // si hay datos que guardar o si se desea finalizar la encuesta
+        if (data.length > 0 || finalizar) {
+
             var cm = forms.utils.common.coockiesManagement();
-            var modelRequest = Ext.create('forms.model.model', { NAME: 'sps_forms_guardar', idSession: cm.get('idSession'), idForm: me.formModel.get('idForm'), datos: me.colectData() })
+            var modelRequest = Ext.create('forms.model.model', { NAME: 'sps_forms_guardar', idSession: cm.get('idSession'), idForm: me.formModel.get('idForm'), finalizar: finalizar, datos: data })
 
             forms.utils.common.request(
                 modelRequest.getData()
@@ -878,14 +964,16 @@
 
                     var data = JSON.parse((response.responseText == '' ? "{}" : response.responseText));
 
-                    if ( data.type )
-                        Ext.Msg.alert('Error al realizar la solicitud', data.mensajeSistema, Ext.emptyFn);
-                    else
+                    if (data.type !== 'EXCEPTION') {
+                        me.getView().getParent().down('app-main').getController().getList();
                         me.getView().destroy();
+                    }
+                    else
+                        Ext.Msg.alert('Error al realizar la solicitud', data.mensajeUsuario, Ext.emptyFn);
 
                 }
                 , function (response, opts) {
-                    alert("Error no controlado");
+                    alert("Error no esperado");
                 });
 
         }
@@ -894,7 +982,7 @@
 
     }
 
-    , colectData: function () {
+    , colectData: function (isRemoteSave) {
 
         var me = this
             , loadMask = new Ext.LoadMask({ message: 'Recolectando datos...' })
@@ -915,6 +1003,7 @@
             }
         });
 
+
         // Solo enviar los items que son nuevos o los que se van a eliminar
         this.optionsData.addFilter(optionsFilter);
 
@@ -922,10 +1011,10 @@
             element = me.elements.getById(option.get('idFormElemento'));
 
             data.push([
-                option.get('idElementoOpcion')
+                option.get('idFelementoOpcion')
                 , option.get('idFormElemento')
-                , ((element.get('elemento') == forms.utils.common.CONTROL_CODES.DATE) ? null : option.get('descripcion'))
-                , ((element.get('elemento') == forms.utils.common.CONTROL_CODES.DATE) ? Ext.Date.parse(option.get('descripcion'), 'd/m/Y') : null)
+                , option.get('descripcion')
+                , isRemoteSave ? forms.utils.common.serialize(option.get('fecha')) : option.get('fecha')
                 , option.get('action')
             ]);
         });
@@ -959,15 +1048,15 @@
             , deleteArguments = [];
 
         Ext.Array.each(data, function (row, index) {
-            switch ( row[4] ) {
-            
+            switch (row[4]) {
+
                 case 'U':
-                    updateArguments.push('SELECT ? AS idElementoOpcion, ? AS idFormElemento, ? AS descripcion, ? AS fecha ');
+                    updateArguments.push('SELECT ? AS idFelementoOpcion, ? AS idFormElemento, ? AS descripcion, ? AS fecha ');
 
                     updateValues.push(row[0].trim());
                     updateValues.push(row[1].trim());
                     updateValues.push(row[2]);
-                    updateValues.push(row[3]);
+                    updateValues.push(forms.utils.common.dateToUnixTime(row[3]));
 
                     break;
 
@@ -982,7 +1071,7 @@
                     break;
 
                 case 'D':
-                    deleteArguments.push('SELECT ? AS idElementoOpcion, ? AS idFormElemento');
+                    deleteArguments.push('SELECT ? AS idFelementoOpcion, ? AS idFormElemento');
 
                     deleteValues.push(row[0].trim());
                     deleteValues.push(row[1].trim());
@@ -996,8 +1085,8 @@
             sql = updateArguments.join(' UNION ALL ');
 
             sql = 'WITH myCTE AS ( ' + sql + ') ' +
-                                    'UPDATE elementsData SET descripcion = (SELECT descripcion FROM myCTE WHERE idElementoOpcion = elementsData.idElementoOpcion AND idFormElemento = elementsData.idFormElemento) ' +
-                                    ', fecha = (SELECT fecha FROM myCTE WHERE idElementoOpcion = elementsData.idElementoOpcion AND idFormElemento = elementsData.idFormElemento )'
+                                    'UPDATE elementsData SET descripcion = (SELECT descripcion FROM myCTE WHERE idFelementoOpcion = elementsData.idFelementoOpcion AND idFormElemento = elementsData.idFormElemento) ' +
+                                    ', fecha = (SELECT fecha FROM myCTE WHERE idFelementoOpcion = elementsData.idFelementoOpcion AND idFormElemento = elementsData.idFormElemento )'
         } else {
             // Si no hay, se crea una consulta para obligar a execute de el primer bloque
             sql = 'SELECT ? AS exec;'
@@ -1011,7 +1100,7 @@
                              , function (tx, result) {
 
                                  if (insertArguments.length > 0) {
-                                     sql = 'INSERT INTO elementsData (idElementoOpcion, idFormElemento, descripcion, fecha) VALUES' + insertArguments.join(',');
+                                     sql = 'INSERT INTO elementsData (idFelementoOpcion, idFormElemento, descripcion, fecha) VALUES' + insertArguments.join(',');
                                  } else {
                                      // Si no hay, se crea una consulta para obligar a execute de el primer bloque
                                      sql = 'SELECT ? AS exec;'
@@ -1024,8 +1113,8 @@
                                      , function (tx, result) {
 
                                          if (deleteArguments.length > 0) {
-                                             sql = 'WITH myCTE AS ( ' + deleteArguments.join(' UNION ALL ') + ') '+
-                                             'DELETE FROM elementsData WHERE idElementoOpcion = ( SELECT idElementoOpcion FROM myCTE WHERE idElementoOpcion = elementsData.idElementoOpcion AND idFormElemento = elementsData.idFormElemento)   AND   idFormElemento = ( SELECT idFormElemento FROM myCTE WHERE idElementoOpcion = elementsData.idElementoOpcion AND idFormElemento = elementsData.idFormElemento)';
+                                             sql = 'WITH myCTE AS ( ' + deleteArguments.join(' UNION ALL ') + ') ' +
+                                             'DELETE FROM elementsData WHERE idFelementoOpcion = ( SELECT idFelementoOpcion FROM myCTE WHERE idFelementoOpcion = elementsData.idFelementoOpcion AND idFormElemento = elementsData.idFormElemento)   AND   idFormElemento = ( SELECT idFormElemento FROM myCTE WHERE idFelementoOpcion = elementsData.idFelementoOpcion AND idFormElemento = elementsData.idFormElemento)';
                                          } else {
                                              // Si no hay, se crea una consulta para obligar a execute de el primer bloque
                                              sql = 'SELECT ? AS exec;'
@@ -1051,7 +1140,7 @@
                                     , function (tx, error) {
                                         alert(error.message);
                                     });
-                               
+
 
                              }
 
@@ -1079,27 +1168,117 @@
                         me.localSave();
                     else
                         me.remoteSave();
+
+
                 }
             });
     }
 
 
-    , finish: function () {
+
+    , finalizeFromLocal: function () {
         var me = this
-            text = ''
+           , idForm = this.formModel.get('idForm').trim()
+            , savedData = []
+            , unsavedData = me.colectData(true);
+        ;
+        debugger
+
+        // Obtener los datos locales
+        forms.globals.DBManagger.connection.transaction(
+            function (tx) {
+                var sql = 'SELECT elementosTable.idFormElemento, idFelementoOpcion, dataTable.descripcion, fecha ' +
+                                'FROM formsElementos AS elementosTable ' +
+                                'INNER JOIN elementsData AS dataTable ON elementosTable.idFormElemento = dataTable.idFormElemento  ' +
+                                'WHERE elementosTable.idForm = ? ; '
+
+                tx.executeSql(sql, [idForm],
+                    function (tx, result) {
+                        Ext.Object.each(result.rows, function (index, option) {
+
+                            savedData.push([
+                                option.idFelementoOpcion
+                                , option.idFormElemento
+                                , option.descripcion
+                                , forms.utils.common.serialize(forms.utils.common.unixTimeToDate(option.fecha))
+                            ]);
+                        });
+
+
+
+                        Ext.Array.each(unsavedData, function (unsavedOption, index) {
+                            if (unsavedOption[4] !== 'D') {
+                                Ext.Array.each(savedData, function (savedOption, index) {
+
+                                    if (unsavedOption[1] == savedOption[1] && unsavedOption[0] == savedOption[0]) {
+                                        savedOption[2] = unsavedOption[2];
+                                        savedOption[3] = unsavedOption[3];
+                                    }
+
+                                });
+                            }
+
+                        });
+
+
+                        // Guardar REMOTAMENTE y finalizar
+
+                        var cm = forms.utils.common.coockiesManagement();
+                        var modelRequest = Ext.create('forms.model.model', { NAME: 'sps_forms_finalizar', idSession: cm.get('idSession'), idForm: me.formModel.get('idForm'), datos: savedData })
+
+                        forms.utils.common.request(
+                            modelRequest.getData()
+                            , function (response, opts) {
+
+                                var data = JSON.parse((response.responseText == '' ? "{}" : response.responseText));
+
+                                if (data.type !== 'EXCEPTION') {
+
+                                    // Eliminar el formulario local.
+                                    me.deleteLocalForm(null);
+
+                                    // Refrescar el listado de la vista principal
+                                    me.getView().getParent().down('app-main').getController().getList();
+
+                                    // Cerrar la vista de detalle
+                                    me.getView().destroy();
+                                }
+
+                                else
+                                    Ext.Msg.alert('Error al realizar la solicitud', data.mensajeUsuario, Ext.emptyFn);
+
+
+                            }
+                            , function (response, opts) {
+                                alert("Error no esperado");
+                            });
+
+                    }
+
+                    , me.selectError)
+            }
+            , function (err) {
+                alert(err.message);
+            });
+
+    }
+
+    , finalize: function () {
+        var me = this
+            , text = ''
         ;
 
         Ext.Msg.confirm("Finalizar encuesta", "Una vez realizada esta acción ya no será posible modificar las respuestas de la encuesta. ¿Esta seguro de finalizar la encuesta?"
                     , function (response, eOpts, msg) {
-                        if ( response == 'yes' ) {
+                        if (response == 'yes') {
 
                             var invalidElements = me.validateResponse();
 
                             if (invalidElements.length > 0) {
-                                text = '<table style="border-collapse:collapse; border:1px solid #000;"> <tr style="border:1px solid #000;"> <td>N° </td> <td style="border:1px solid #000;">Requerida </td> <td>Min. Resp. </td> <td style="border:1px solid #000;">Num. Resp. </td> <tr>'
+                                text = '<table style="border-collapse:collapse; border:1px solid #6E6E6E;"> <tr style="border:1px solid #6E6E6E;"> <td>N° </td> <td style="border:1px solid #6E6E6E;">Requerida </td> <td>Min. Resp. </td> <td style="border:1px solid #6E6E6E;">Num. Resp. </td> <tr>'
 
                                 Ext.Array.each(invalidElements, function (item, index) {
-                                    text = text + '<tr style="border:1px solid #000;"> <td>' + item.orden + '</td> <td style="border:1px solid #000;">' + item.requerido + '</td> <td>' + item.min + '</td> <td style="border:1px solid #000;">' + item.numRespuestas + '</td>' + '</tr>';
+                                    text = text + '<tr style="border:1px solid #6E6E6E;"> <td>' + item.orden + '</td> <td style="border:1px solid #6E6E6E;">' + (item.requerido ? 'Si' : 'No') + '</td> <td>' + item.minimo + '</td> <td style="border:1px solid #6E6E6E;">' + item.numRespuestas + '</td>' + '</tr>';
                                 });
 
                                 text = text + '</table>'
@@ -1108,7 +1287,10 @@
 
 
                             } else
-                                me.save();
+                                if (me.formModel.get('fechaDescarga') !== null)
+                                    me.finalizeFromLocal();
+                                else
+                                    me.remoteSave(true);
                         }
                     });
     }
@@ -1120,7 +1302,7 @@
 
     , close: function () {
         var me = this;
-        
+
         Ext.Msg.confirm("Cerrar encuesta", "La información que no se haya guardado se perderá. ¿Desea continuar?"
                  , function (response, eOpts, msg) {
                      if (response == 'yes') {

@@ -14,15 +14,15 @@ Ext.define('forms.utils.common',
         /**
         * Contienen los KEYs para asociar el valor numérico de cada control una clave String, este valor numérico está definido en la DB
         */
-        , CONTROL_CODES : {
-              'RADIO' : 1
+        , CONTROL_CODES: {
+            'RADIO': 1
             , 'CHECK': 2
             , 'SELECT': 3
             , 'DATE': 4
             , 'TEXT': 5
-            , 'TIME' : 6
+            , 'TIME': 6
         }
-            
+
         /**
         * Parsea una fecha a un formato especificado.
         * @param {Date} date Fecha.
@@ -74,7 +74,7 @@ Ext.define('forms.utils.common',
             me = this;
             return {
 
-                get : function (name) {
+                get: function (name) {
                     if (this.exist(name))
                         return JSON.parse(sessionStorage.getItem(name));
                     else
@@ -87,9 +87,9 @@ Ext.define('forms.utils.common',
                     return (sessionStorage.getItem(name) !== null);
                 }
 
-                , remove : function (name) {
+                , remove: function (name) {
                     if (this.exist(name))
-                        sessionStorage.removeItem (name);
+                        sessionStorage.removeItem(name);
                 }
 
             }
@@ -105,22 +105,22 @@ Ext.define('forms.utils.common',
             var CODES = this.CONTROL_CODES;
 
             switch (code) {
-            
+
                 case CODES.RADIO:
                     return 'radiofield';
-                
+
 
                 case CODES.CHECK:
                     return 'checkboxfield';
-                
+
 
                 case CODES.DATE:
                     return 'datepickerfield';
-                    
+
 
                 case CODES.TIME:
-                    return 'datefield';
-                
+                    return 'textfield';
+
 
                 case CODES.SELECT:
                     return 'selectfield';
@@ -131,30 +131,8 @@ Ext.define('forms.utils.common',
             }
         }
 
-
-        // Parsea el formato JSON que envía el backend
-        , robinParse: function (o) {
-            if (Ext.isArray(o)) for (var i = 0; i < o.length; i++) o[i] = robinParse(o[i]);
-            else if (Ext.isObject(o)) for (var i in o) o[i] = robinParse(o[i]);
-		    else if (Ext.typeOf(o) == 'string') {
-			    if (o.match(/^UTC:\d*,\d*,\d*,\d*,\d*,\d*,\d*$/)) {
-				    var a = o.substr(4).split(',');
-				    var d = new Date();
-				    d.setUTCFullYear(a[0]);
-				    d.setUTCMonth(a[1] - 1);
-				    d.setUTCDate(a[2]);
-				    d.setUTCHours(a[3]);
-				    d.setUTCMinutes(a[4]);
-				    d.setUTCSeconds(a[5]);
-				    d.setUTCMilliseconds(a[6]);
-				    return d;
-			    }
-		    }
-		    return o;
-        }
-
         , dateToUnixTime: function (date) {
-            if ( Ext.isDate(date) )
+            if (Ext.isDate(date))
                 return date.getTime() / 1000;
         }
 
@@ -166,31 +144,42 @@ Ext.define('forms.utils.common',
             return new Date(unixTime * 1000);
         }
 
-        , robinStringify: function (o) {
+        , serialize: function (o) {
             me = this;
 
             if (Ext.isArray(o)) {
-		            var a = [];
-		            for (var i = 0; i < o.length; i++) a.push(me.robinStringify(o[i]));
-		            return a;
-		        }
+                var a = [];
+                for (var i = 0; i < o.length; i++) a.push(me.serialize(o[i]));
+                return a;
+            }
             if (Ext.isObject(o)) {
                 var l = {}
-                for (var i in o) l[i] = me.robinStringify(o[i]);
+                for (var i in o) l[i] = me.serialize(o[i]);
                 return l;
             }
-            if (Ext.typeOf(o) == 'date') return 'UTC:' + o.getUTCFullYear() + ',' + (o.getUTCMonth() + 1) + ',' + o.getUTCDate() + ',' + o.getUTCHours() + ',' + o.getUTCMinutes() + ',' + o.getUTCSeconds() + ',' + o.getUTCMilliseconds();
-                return o;
+            if (Ext.typeOf(o) == 'date') return 'UTC:' + o.getUTCFullYear() + '-' + (o.getUTCMonth() + 1) + '-' + o.getUTCDate() + ',' + o.getUTCHours() + '.' + o.getUTCMinutes() + '.' + o.getUTCSeconds() + '.' + o.getUTCMilliseconds();
+            return o;
         }
-    //return JSON.stringify(miStringify(o));
 
-
-        //, getDataJSON: function (store) {
-        //    return JSON.stringify( this.getDataObjects(store) );
-        //}
-        //, getDataObjects: function (store) {
-        //    return store.getValues('data')
-        //}
-
+        // Parsea el formato JSON que envía el backend
+        , deserialize: function (o) {
+            if (Ext.isArray(o)) for (var i = 0; i < o.length; i++) o[i] = deserialize(o[i]);
+            else if (Ext.isObject(o)) for (var i in o) o[i] = deserialize(o[i]);
+            else if (Ext.typeOf(o) == 'string') {
+                if (o.match(/^UTC:\d*,\d*,\d*,\d*,\d*,\d*,\d*$/)) {
+                    var a = o.substr(4).split(',');
+                    var d = new Date();
+                    d.setUTCFullYear(a[0]);
+                    d.setUTCMonth(a[1] - 1);
+                    d.setUTCDate(a[2]);
+                    d.setUTCHours(a[3]);
+                    d.setUTCMinutes(a[4]);
+                    d.setUTCSeconds(a[5]);
+                    d.setUTCMilliseconds(a[6]);
+                    return d;
+                }
+            }
+            return o;
+        }
 
     });

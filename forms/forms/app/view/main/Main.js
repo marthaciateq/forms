@@ -11,12 +11,12 @@ Ext.define('forms.view.main.Main', {
     , requires: [
         'Ext.MessageBox'
 
-        ,'forms.view.main.MainController'
+        , 'forms.view.main.MainController'
         , 'forms.view.main.MainModel'
         , 'Ext.form.Panel'
     ]
 
-    , layout: 'fit' 
+    , layout: 'fit'
     , controller: 'main'
     , reference: 'main'
     , title: 'Encuestas'
@@ -26,9 +26,9 @@ Ext.define('forms.view.main.Main', {
         initialize: 'getList'
     }
 
-   
 
-    , tools:[
+
+    , tools: [
         {
             itemId: 'close'
             , type: 'close'
@@ -37,7 +37,7 @@ Ext.define('forms.view.main.Main', {
                 panel.getController().logout();
             }
         }
-    
+
     ]
 
     , items: [
@@ -56,27 +56,17 @@ Ext.define('forms.view.main.Main', {
                         //}
                         , store: {}
                         //, bind: '{encuestas}'
-                        
+
                         , columns: [
                             {
                                 text: ''
-                                //, xtype: 'gridcell'
-                                , width: 64
+                                , width: 32
                                 , renderer: function (value, record, index, cell, column, HTML) {
-                                    //debugger;
-
-                                    return HTML;
+                                    return '<div class="' + (record.get('fechaDescarga') == null ? 'x-fa fa-cloud' : 'x-fa fa-unlink') + '">' + '</div>';
                                 }
                                 , cell: {
                                     encodeHtml: false
                                 }
-                                //    //xtype: 'widgetcell'
-                                //    itemId: 'download'
-                                ////    , widget: {
-                                        
-                                ////       iconCls: 'x-fa fa-cloud-download'
-                                ////    }
-                                //}
                             }
                             , {
                                 flex: 1
@@ -85,12 +75,12 @@ Ext.define('forms.view.main.Main', {
                                 , cell: { encodeHtml: false }
                                 , tpl: new Ext.XTemplate(
                                                               '<div style="border:0px solid #000;">',
-                                                                '<b style="border:0px solid #000;display:block;float:left;">{titulo}</b> <span style="font-size:10px;border:0px solid #000;display:block;float:right;">{[Ext.Date.format(values.fecha, "d M Y H:m")]}</span></div>',
-                                                            '<div style=display:block;float:left;><p>Envia: {nombreCompletoCreo}</p></div> '
-                                                            
+                                                                '<b style="border:0px solid #000;display:block;float:left;">{titulo}</b> <span style="font-size:10px;border:0px solid #000;display:block;float:right;">Caduca</br>{[Ext.Date.format(values.fCaducidad, "d M Y")]}</span></div>',
+                                                            '<div style=display:block;float:left;><p style="font-size:11px;">Envia: {nombreCompletoCreo}</p></div> '
+
                                                         )
 
-                                
+
                             }
 
                         ]
@@ -103,6 +93,6 @@ Ext.define('forms.view.main.Main', {
                     }
                 ]
             }
-        
+
     ]
 });

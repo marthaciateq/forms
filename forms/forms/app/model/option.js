@@ -5,11 +5,11 @@
         'Ext.data.Field'
     ]
 
-    , idProperty: 'idElementoOpcion'
+    , idProperty: 'idFelementoOpcion'
 
     , fields: [
        {
-           name: 'idElementoOpcion'
+           name: 'idFelementoOpcion'
 
        }
 
@@ -22,15 +22,17 @@
            , type: 'string'
        }
        , {
-            name: 'fecha'
+           name: 'fecha'
             , type: 'date'
             , format: 'd/m/Y'
             , submitFormat: 'd/m/Y'
+           , defaultValue: null
             , convert: function (value, record) {
-                return forms.utils.common.robinParse(value)
+                //debugger
+                return forms.utils.common.deserialize(value)
             }
        }
-       
+
 
        , {
            name: 'orden'
@@ -39,7 +41,7 @@
         , {
             name: 'action' // N = New, D = Deleted, '' = No Changes
            , type: 'string'
-           , defaultValue: '' 
+           , defaultValue: ''
         }
 
     ]
