@@ -59,11 +59,6 @@
        , {
            name: 'nombreCompletoCreo'
        }
-
-       , {
-           name: 'idFormDescarga'
-           , type: 'string'
-       }
     ]
 
 });

@@ -29,7 +29,7 @@
                 var controller = panel.getController();
 
                 // Actualizar los datos de las respuestas
-                controller.updateData();
+                //controller.updateData(controller.optionsData);
 
                 // Moverse
                 controller.previous(this);
@@ -43,7 +43,7 @@
                 var controller = panel.getController();
 
                 // Actualizar los datos de las respuestas
-                controller.updateData();
+                //controller.updateData(controller.optionsData);
 
                 // Moverse
                 controller.next(this);

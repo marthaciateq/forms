@@ -24,7 +24,7 @@
        }
        , {
            name: 'requerido'
-           , type: 'boolean'
+           , type: 'string'
 
        }
        , {

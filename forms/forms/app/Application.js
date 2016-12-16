@@ -29,7 +29,7 @@ Ext.define('forms.Application', {
     * Se aprovecha este evento para inicializar variables propias para configurar la app.
     */
     , init: function (app) {
-        var SERVER = 'http://172.16.9.40' // Es la IP del Servidor de DB al que se va a conectar la APP
+        var SERVER = 'http://172.16.7.29' // Es la IP del Servidor de DB al que se va a conectar la APP
             , RUN_MODES = { DEVELOPMENT: /forms/, PRODUCTION: SERVER + '/forms/' } // Los modos en los que puede correr la APP, este objeto se inicializa en el metodo init de la app
         ;
 
@@ -83,9 +83,10 @@ Ext.define('forms.Application', {
           //TEXT as ISO8601 strings ("YYYY-MM-DD HH:MM:SS.SSS").
           //REAL as Julian day numbers, the number of days since noon in Greenwich on November 24, 4714 B.C. according to the proleptic Gregorian calendar.
           //INTEGER as Unix Time, the number of seconds since 1970-01-01 00:00:00 UTC.
-          
+
+
           tx.executeSql('CREATE TABLE IF NOT EXISTS forms (idForm TEXT PRIMARY KEY, descripcion TEXT, estatus TEXT, fecha TEXT, titulo TEXT, fcaducidad TEXT);');
-          tx.executeSql('CREATE TABLE IF NOT EXISTS formsElementos (idFormElemento TEXT PRIMARY KEY, idForm TEXT, elemento INT, descripcion TEXT, orden INT, minimo INT, requerido INT);');
+          tx.executeSql('CREATE TABLE IF NOT EXISTS formsElementos (idFormElemento TEXT PRIMARY KEY, idForm TEXT, elemento INT, descripcion TEXT, orden INT, minimo INT, requerido TEXT);');
           tx.executeSql('CREATE TABLE IF NOT EXISTS fElementosOpciones (idFelementoOpcion TEXT PRIMARY KEY, idFormElemento TEXT, descripcion TEXT, orden INT);');
           tx.executeSql('CREATE TABLE IF NOT EXISTS elementsData (idFelementoOpcion TEXT, idFormElemento TEXT, descripcion TEXT, fecha TEXT);');
 

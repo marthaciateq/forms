@@ -15,12 +15,11 @@ Ext.define('forms.utils.common',
         * Contienen los KEYs para asociar el valor numérico de cada control una clave String, este valor numérico está definido en la DB
         */
         , CONTROL_CODES: {
-            'RADIO': 1
+            'TEXT': 0
+            , 'RADIO': 1
             , 'CHECK': 2
-            , 'SELECT': 3
-            , 'DATE': 4
-            , 'TEXT': 5
-            , 'TIME': 6
+            , 'DATE': 3
+            , 'TIME': 4
         }
 
         /**
@@ -138,7 +137,7 @@ Ext.define('forms.utils.common',
 
 
         , unixTimeToDate: function (unixTime) {
-            if (unixTime == null)
+            if (unixTime == null || unixTime == undefined || unixTime == 'undefined')
                 return
 
             return new Date(unixTime * 1000);
