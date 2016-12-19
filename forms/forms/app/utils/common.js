@@ -20,6 +20,7 @@ Ext.define('forms.utils.common',
             , 'CHECK': 2
             , 'DATE': 3
             , 'TIME': 4
+            , 'SELECT' : 5
         }
 
         /**
@@ -124,9 +125,11 @@ Ext.define('forms.utils.common',
                 case CODES.SELECT:
                     return 'selectfield';
 
-                case CODES.TEXT: {
+                case CODES.TEXT: 
                     return 'textfield';
-                }
+
+             
+                
             }
         }
 

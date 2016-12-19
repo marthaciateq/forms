@@ -59,14 +59,24 @@
         if (me.page > 1)
             next.getParent().getItems().getByKey('prev').show();
 
-        var maxRecords = me.start + me.limit;
+        var MAX_PAGES = Math.ceil(me.totalRecords / me.limit);
 
-        var diference = maxRecords - me.totalRecords;
-
-
-        if (me.start + diference == me.totalRecords)
+        if (me.page == MAX_PAGES)
             next.hide();
     }
+
+    //, refreshNextButton: function (next) {
+    //    var me = this;
+    //    // Actualizar la apariencia de los controles
+    //    if (me.page > 1)
+    //        next.getParent().getItems().getByKey('prev').show();
+
+    //    var MAX_PAGES = Math.ceil( me.totalRecords / me.limit);
+
+
+    //    if (me.page == MAX_PAGES)
+    //        next.hide();
+    //}
 
     /**
     * Realiza la acción: moverse hacia la página anterior del form
@@ -94,6 +104,19 @@
         }
     }
 
+    //, refreshPreviousButton: function (prev) {
+    //    var me = this;
+    //    // Actualizar aspecto de los controles
+    //    if (me.page == 1) {
+    //        prev.hide();
+
+    //        if (me.totalRecords > me.start + me.limit)
+    //            prev.getParent().getItems().getByKey('next').show();
+
+    //    } else {
+    //        prev.getParent().getItems().getByKey('next').show();
+    //    }
+    //}
     /**
     * Consulta el backend y obtiene la estructura de la encuesta solicitada. La estructura obtenida corresponde al bloque de la página solicitada
     * @param {Ext.data.Model} formModel Es el form del cual se quiere obtener la estructura.
@@ -198,8 +221,6 @@
                         me.totalRecords = result.rows[0].totalRecords;
 
                         var sql = 'WITH myCTE AS ( ' +
-                                    '	SELECT * FROM ' +
-                                    '		( ' +
                                     '			SELECT idFormElemento AS id ' +
                                     '				, elemento ' +
                                     "				, '' as pid " +
@@ -207,15 +228,12 @@
                                     '				, orden ' +
                                     '				, requerido ' +
                                     '				, minimo ' +
-                                    '				, ( SELECT COUNT(idFormElemento) FROM formsElementos AS B WHERE A.idFormElemento >= b.idFormElemento) AS row  ' +
-                                    '			FROM	formsElementos AS A  ' +
-                                    '			WHERE	idForm = ?  ' +
-                                    '		) AS C ' +
-                                    '	WHERE row > ? AND row <= ? ' +
+                                    '			FROM	formsElementos  ' +
+                                    '	WHERE idForm = ? AND orden > ? AND orden <= ? ' +
                                     ') ' +
-                                    '	SELECT id, elemento, pid, descripcion, orden, requerido, minimo, 0 AS nivel FROM myCTE ' +
+                                    '	SELECT id, elemento, pid, descripcion, orden, requerido, minimo, 0 AS nivel FROM myCTE' +
                                     '	UNION ALL ' +
-                                    '	SELECT idFelementoOpcion As id, 0 AS elemento, idformElemento AS pid, felementosOpciones.descripcion, felementosOpciones.orden, "N" AS requerido, 0 as minimo, 1 AS nivel FROM felementosOpciones ' +
+                                    '	SELECT idFelementoOpcion As id, 0 AS elemento, idformElemento AS pid, felementosOpciones.descripcion, felementosOpciones.orden, "N" AS requerido, 0 as minimo, 1 AS nivel FROM felementosOpciones' +
                                     '	INNER JOIN myCTE ON felementosOpciones.idformElemento = myCTE.id ' +
                                     '   UNION ALL ' +
                                     '   SELECT idFelementoOpcion AS id, fecha AS elemento, idFormElemento AS pid, elementsData.descripcion, 0 AS orden, "N" AS requerido, 0 AS minimo, 2 AS nivel FROM elementsData ' +
@@ -272,11 +290,13 @@
                                         "					END " +
                                         "				) AS respuestaValida " +
                                         "		, MAX([formsElementosTable].minimo) AS minimo " +
+                                        "       , MAX(formsElementosTable.orden) AS orden  " +
                                         "FROM formsElementos AS formsElementosTable " +
                                         "	LEFT JOIN elementsData AS elementsDataTable ON formsElementosTable.idFormElemento = elementsDataTable.idFormElemento " +
                                         "WHERE " +
                                         "	idForm = ? " +
-                                        "GROUP BY formsElementosTable.idFormElemento;";
+                                        "GROUP BY formsElementosTable.idFormElemento "
+                                        "ORDER BY orden;";
 
                                 // Elementos preparados para usarse como validaciones
                                 if (me.start == 0) {
@@ -378,11 +398,12 @@
             , defaultName = ''
             , currControl = null
             , elemento = null
+            , options = []
         ;
 
         // Recorrer los elementos del formulario
         elementsStore.each(function (element, index) {
-
+            elemento = element.get('elemento');
             // Generar un label para cada elemento y mostrar en el la descripcion de la pregunta
             type = forms.utils.common.getControlByCode(element.get('elemento'));
 
@@ -398,10 +419,25 @@
             // Aplicar el filtro
             optionsStore.addFilter(optionsFilter);
 
+
+            if (elemento == forms.utils.common.CONTROL_CODES.SELECT) {
+                options = new Array();
+
+                elementControl = Ext.create({
+                    xtype: type
+                    , valueField: 'value'
+                    , displayField: 'text'
+                    , name: defaultName
+                    , reference: type + element.get('idFormElemento')
+                });
+
+                
+            }
+
             // Generar una a una las opciones del elemento
             optionsStore.each(function (option, index) {
                 defaultName = type + option.get('idFelementoOpcion');
-                elemento = element.get('elemento');
+                
 
                 // Si la opcion se debe mostrar como un control de radio, entonces necesita un tratamiento especial, ya que todos los controles generados deben tener el mismo NAME
                 if (elemento == forms.utils.common.CONTROL_CODES.RADIO) {
@@ -420,6 +456,8 @@
                         , labelWidth: tm.getWidth(option.get('descripcion')) * WIDTH_FACTOR + MARGIN
                         , reference: defaultName
                     });
+                } else if (elemento == forms.utils.common.CONTROL_CODES.SELECT) {
+                    options.push({ text: option.get('descripcion'), value: option.get('idFelementoOpcion') });
                 } else
                     elementControl = Ext.create({
                         xtype: type
@@ -438,7 +476,9 @@
             // Quitar el filtro al store de opciones
             optionsStore.clearFilter();
 
-
+            if (elemento == forms.utils.common.CONTROL_CODES.SELECT) {
+                elementControl.setOptions(options);
+            }
 
             // Aplicar el filtro de opciones a los respuestas de las opciones
 
@@ -454,11 +494,12 @@
 
                     if (type == 'radiofield' || type == 'checkboxfield')
                         currControl.setChecked(true);
+                    else if (type == 'selectfield')
+                        elementControl.setValue(option.get('idFelementoOpcion'));
+                    else if (type == 'datepickerfield')
+                        currControl.setValue(option.get('fecha'));
                     else
-                        if (type == 'datepickerfield')
-                            currControl.setValue(option.get('fecha'));
-                        else
-                            currControl.setValue(option.get('descripcion'));
+                        currControl.setValue(option.get('descripcion'));
                 }
             });
 
@@ -496,6 +537,7 @@
             , optionData = null
             , currOption = null
             , DBOption = null
+            , option = null
         ;
 
         // Cargar únicamente los elementos renderizados en el form
@@ -515,7 +557,7 @@
             me.options.addFilter(optionsFilter);
 
 
-            if (element.get('elemento') == forms.utils.common.CONTROL_CODES.CHECK || element.get('elemento') == forms.utils.common.CONTROL_CODES.RADIO) {
+            if (element.get('elemento') == forms.utils.common.CONTROL_CODES.CHECK || element.get('elemento') == forms.utils.common.CONTROL_CODES.RADIO ) {
                 //// Si se trata de un checkbox, se remueven todas las opciones
                 me.options.each(function (option, index) {
 
@@ -532,11 +574,25 @@
                     currControl = me.lookupReference(type + option.get('idFelementoOpcion'));
 
                     if (currControl.isChecked()) {
-
-                       
                         me.localOptions.add(Ext.create('forms.model.option', { idFelementoOpcion: option.get('idFelementoOpcion'), idFormElemento: option.get('idFormElemento'), orden: option.get('orden') }));
                     }
                 });
+            } else if (element.get('elemento') == forms.utils.common.CONTROL_CODES.SELECT) {
+                //// Si se trata de un checkbox, se remueven todas las opciones
+                me.options.each(function (option, index) {
+                    optionData = me.localOptions.getById(option.get('idFelementoOpcion'));
+
+                    if (optionData)
+                        me.localOptions.remove(optionData);
+
+                });
+
+                currControl = me.lookupReference(type + element.get('idFormElemento'));
+                option = me.options.getById(currControl.getValue())
+
+                if ( option  )
+                    me.localOptions.add( Ext.create('forms.model.option', { idFelementoOpcion: option.get('idFelementoOpcion'), idFormElemento: option.get('idFormElemento'), orden: option.get('orden') }));
+
 
             } else {
                 // Para todos los controles distintos de CHECK u RADIO
@@ -551,27 +607,46 @@
                     currOption = Ext.create('forms.model.option', { idFelementoOpcion: currOption.get('idFelementoOpcion'), idFormElemento: element.get('idFormElemento'), orden: currOption.get('orden') });
 
                     me.localOptions.add(currOption);
+
+                    currControl = me.lookupReference(type + currOption.get('idFelementoOpcion'));
+
+                    if (type == 'datepickerfield') {
+                        currOption.set('fecha', currControl.getValue());
+                    }
+                    else {
+                        currOption.set('descripcion', currControl.getValue());
+                    }
                 }
 
 
                 currControl = me.lookupReference(type + currOption.get('idFelementoOpcion'));
 
+                localOption = me.localOptions.getById(currOption.get('idFelementoOpcion'));
                 DBOption = me.DBOptions.getById(currOption.get('idFelementoOpcion'));
 
-                if (type == 'datepickerfield') {
 
-                    if (DBOption.get('fecha') !== currControl.getValue()) {
-                        currOption.set('fecha', currControl.getValue());
-                        currOption.set('action', UPDATE);
-                    } else
-                        currOption.set('action', '');
-                }
-                else {
-                    if (DBOption.get('descripcion') !== currControl.getValue()) {
-                        currOption.set('descripcion', currControl.getValue());
-                        currOption.set('action', UPDATE);
-                    }else
-                        currOption.set('action', '');
+                if (DBOption !== null) {
+                    if (type == 'datepickerfield') {
+                        if (DBOption.get('fecha') !== currControl.getValue() ) 
+                            currOption.set('fecha', currControl.getValue());
+                    }
+                    else {
+                        if (DBOption.get('descripcion') !== currControl.getValue() ) 
+                            currOption.set('descripcion', currControl.getValue());
+                    }
+                } else {
+                    if (localOption !== null) {
+                        if (type == 'datepickerfield') {
+                            if (localOption.get('fecha') !== currControl.getValue() )
+                                currOption.set('fecha', currControl.getValue());
+                        }
+                        else {
+                            if (localOption.get('descripcion') !== currControl.getValue())
+                                currOption.set('descripcion', currControl.getValue());
+                        }
+
+                    }
+
                 }
             }
 
@@ -619,7 +694,7 @@
             data.addFilter(optionsFilter);
 
             if (validator.get('requerido') == 'S' && ( validator.get('numRespuestas') == 0  || validator.get('minimo') > validator.get('numRespuestas') ))
-                invalidElements.push({ orden: index + 1, requerido: validator.get('requerido'), minimo: validator.get('minimo'), numRespuestas: validator.get('numRespuestas') });
+                invalidElements.push({ orden: validator.get('orden'), requerido: validator.get('requerido'), minimo: validator.get('minimo'), numRespuestas: validator.get('numRespuestas') });
 
         });
 
@@ -960,7 +1035,7 @@
             var DBOption = me.DBOptions.getById(localOption.get('idFelementoOpcion'));
 
             if (DBOption) {
-                if (localOption.get('action') == 'U' ) {
+                if (localOption.get('descripcion') !== DBOption.get('descripcion') || localOption.get('fecha') !== DBOption.get('fecha')) {
 
                     option = Ext.create('forms.model.option', {
                         idFelementoOpcion: localOption.get('idFelementoOpcion')

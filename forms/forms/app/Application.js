@@ -29,7 +29,7 @@ Ext.define('forms.Application', {
     * Se aprovecha este evento para inicializar variables propias para configurar la app.
     */
     , init: function (app) {
-        var SERVER = 'http://172.16.7.29' // Es la IP del Servidor de DB al que se va a conectar la APP
+        var SERVER = 'http://172.16.5.110' // Es la IP del Servidor de DB al que se va a conectar la APP
             , RUN_MODES = { DEVELOPMENT: /forms/, PRODUCTION: SERVER + '/forms/' } // Los modos en los que puede correr la APP, este objeto se inicializa en el metodo init de la app
         ;
 

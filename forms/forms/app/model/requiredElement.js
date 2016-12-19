@@ -26,6 +26,10 @@
            name: 'respuestaValida'
            , type: 'boolean'
        }
+       , {
+           name: 'orden'
+           , type: 'int'
+       }
     ]
 
 

@@ -74,9 +74,7 @@ Ext.define('forms.view.main.Main', {
                                 , xtype: 'templatecolumn'
                                 , cell: { encodeHtml: false }
                                 , tpl: new Ext.XTemplate(
-                                                              '<div style="border:0px solid #000;">',
-                                                                '<b style="border:0px solid #000;display:block;float:left;">{titulo}</b> <span style="font-size:10px;border:0px solid #000;display:block;float:right;">Caduca</br>{[Ext.Date.format(values.fCaducidad, "d M Y")]}</span></div>',
-                                                            '<div style=display:block;float:left;><p style="font-size:11px;">Envia: {nombreCompletoCreo}</p></div> '
+                                                              '<div style="width:80%;float:left;"> <b style="display:block;float:left;width:100%;"> {titulo} </b> <p style="display:block;float:left;width:100%;font-size:11px;"> Envia: {nombreCompletoCreo} </p></div> <div style="width:20%;float:left;"> <span style="font-size:10px;display:block;float:right;">Caduca</br>{[Ext.Date.format(values.fCaducidad, "d M Y")]}</span> </div>'
 
                                                         )
 

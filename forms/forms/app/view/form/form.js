@@ -4,6 +4,7 @@
     , requires: [
        'forms.view.form.formController'
         , 'Ext.form.Panel'
+        , 'Ext.form.FieldSet'
         , 'forms.model.element'
         , 'forms.model.option'
 
@@ -11,6 +12,7 @@
         , 'Ext.field.Checkbox'
         , 'Ext.field.Text'
         , 'Ext.field.DatePicker'
+        , 'Ext.field.Select'
 
     ]
 

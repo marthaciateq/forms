@@ -69,7 +69,7 @@
                 if (response.timedout)
                     Ext.Msg.alert('Tiempo de esperaterminado', response.statusText, Ext.emptyFn);
                 else
-                    Ext.Msg.alert('Error no esperado', response, Ext.emptyFn);
+                    Ext.Msg.alert('Error no esperado', response.statusText, Ext.emptyFn);
 
             }
 
