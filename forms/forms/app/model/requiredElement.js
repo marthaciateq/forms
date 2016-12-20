@@ -18,6 +18,11 @@
        }
 
        , {
+           name: 'elemento'
+           , type: 'int'
+       }
+
+       , {
            name: 'requerido'
            , type: 'string'
        }

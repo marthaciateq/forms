@@ -18,6 +18,10 @@
        }
 
        , {
+           name: 'idElementData'
+       }
+
+       , {
            name: 'descripcion'
            , type: 'string'
        }

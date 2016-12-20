@@ -65,19 +65,7 @@
             next.hide();
     }
 
-    //, refreshNextButton: function (next) {
-    //    var me = this;
-    //    // Actualizar la apariencia de los controles
-    //    if (me.page > 1)
-    //        next.getParent().getItems().getByKey('prev').show();
-
-    //    var MAX_PAGES = Math.ceil( me.totalRecords / me.limit);
-
-
-    //    if (me.page == MAX_PAGES)
-    //        next.hide();
-    //}
-
+  
     /**
     * Realiza la acción: moverse hacia la página anterior del form
     */
@@ -104,19 +92,7 @@
         }
     }
 
-    //, refreshPreviousButton: function (prev) {
-    //    var me = this;
-    //    // Actualizar aspecto de los controles
-    //    if (me.page == 1) {
-    //        prev.hide();
-
-    //        if (me.totalRecords > me.start + me.limit)
-    //            prev.getParent().getItems().getByKey('next').show();
-
-    //    } else {
-    //        prev.getParent().getItems().getByKey('next').show();
-    //    }
-    //}
+   
     /**
     * Consulta el backend y obtiene la estructura de la encuesta solicitada. La estructura obtenida corresponde al bloque de la página solicitada
     * @param {Ext.data.Model} formModel Es el form del cual se quiere obtener la estructura.
@@ -223,7 +199,7 @@
                         var sql = 'WITH myCTE AS ( ' +
                                     '			SELECT idFormElemento AS id ' +
                                     '				, elemento ' +
-                                    "				, '' as pid " +
+                                    
                                     '				, descripcion ' +
                                     '				, orden ' +
                                     '				, requerido ' +
@@ -231,13 +207,13 @@
                                     '			FROM	formsElementos  ' +
                                     '	WHERE idForm = ? AND orden > ? AND orden <= ? ' +
                                     ') ' +
-                                    '	SELECT id, elemento, pid, descripcion, orden, requerido, minimo, 0 AS nivel FROM myCTE' +
+                                    '	SELECT id, elemento, 0 AS pid, 0 AS gpid, descripcion, orden, requerido, minimo, 0 AS nivel FROM myCTE' +
                                     '	UNION ALL ' +
-                                    '	SELECT idFelementoOpcion As id, 0 AS elemento, idformElemento AS pid, felementosOpciones.descripcion, felementosOpciones.orden, "N" AS requerido, 0 as minimo, 1 AS nivel FROM felementosOpciones' +
+                                    '	SELECT idFelementoOpcion As id, 0 AS elemento, idformElemento AS pid, 0 AS gpid, felementosOpciones.descripcion, felementosOpciones.orden, "N" AS requerido, 0 as minimo, 1 AS nivel FROM felementosOpciones' +
                                     '	INNER JOIN myCTE ON felementosOpciones.idformElemento = myCTE.id ' +
                                     '   UNION ALL ' +
-                                    '   SELECT idFelementoOpcion AS id, fecha AS elemento, idFormElemento AS pid, elementsData.descripcion, 0 AS orden, "N" AS requerido, 0 AS minimo, 2 AS nivel FROM elementsData ' +
-                                    '   INNER JOIN myCTE ON elementsData.idFormElemento = myCTE.id; '
+                                    '   SELECT idElementData AS id, fecha AS elemento, idFelementoOpcion AS pid, idFormElemento AS gpid, elementsData.descripcion, 0 AS orden, "N" AS requerido, 0 AS minimo, 2 AS nivel FROM elementsData ' +
+                                    '   INNER JOIN myCTE ON elementsData.idFormElemento = myCTE.id; ' // Agregr el idUsuario
 
 
                         tx.executeSql(sql, [idForm, me.start, me.start + me.limit]
@@ -260,8 +236,8 @@
                                             break;
 
                                         case 2:
-                                            DBOption = Ext.create('forms.model.option', { idFelementoOpcion: record.id, descripcion: record.descripcion, idFormElemento: record.pid, fecha: forms.utils.common.unixTimeToDate(record.elemento), action: '' });
-                                            localOption = Ext.create('forms.model.option', { idFelementoOpcion: record.id, descripcion: record.descripcion, idFormElemento: record.pid, fecha: forms.utils.common.unixTimeToDate(record.elemento), action: '' });
+                                            DBOption = Ext.create('forms.model.option', {idElementData: record.id, idFelementoOpcion: record.pid, descripcion: record.descripcion, idFormElemento: record.gpid, fecha: forms.utils.common.unixTimeToDate(record.elemento), action: '' });
+                                            localOption = Ext.create('forms.model.option', { idElementData: record.id, idFelementoOpcion: record.pid, descripcion: record.descripcion, idFormElemento: record.gpid, fecha: forms.utils.common.unixTimeToDate(record.elemento), action: '' });
                                             me.DBOptions.add(DBOption);
                                             me.localOptions.add(localOption);
                                             break;
@@ -291,6 +267,7 @@
                                         "				) AS respuestaValida " +
                                         "		, MAX([formsElementosTable].minimo) AS minimo " +
                                         "       , MAX(formsElementosTable.orden) AS orden  " +
+                                        "       , MAX(formsElementosTable.elemento) AS elemento " +
                                         "FROM formsElementos AS formsElementosTable " +
                                         "	LEFT JOIN elementsData AS elementsDataTable ON formsElementosTable.idFormElemento = elementsDataTable.idFormElemento " +
                                         "WHERE " +
@@ -431,7 +408,7 @@
                     , reference: type + element.get('idFormElemento')
                 });
 
-                
+                options.push({ text: 'Seleccione una opción', value: 'NULL' });
             }
 
             // Generar una a una las opciones del elemento
@@ -484,10 +461,13 @@
 
             me.localOptions.addFilter(optionsFilter);
 
+            if (type == 'selectfield' && me.localOptions.count() == 0)
+                elementControl.setValue('NULL');
+
             // Asignar los valores de respuesta a las opciones del elemento
             me.localOptions.each(function (option, index) {
 
-                if (option.get('action') !== DELETE) {
+                //if (option.get('action') !== DELETE) {
                     defaultName = type + option.get('idFelementoOpcion');
 
                     currControl = me.lookupReference(defaultName)
@@ -500,7 +480,7 @@
                         currControl.setValue(option.get('fecha'));
                     else
                         currControl.setValue(option.get('descripcion'));
-                }
+                //}
             });
 
             // Remover el filtro
@@ -523,7 +503,6 @@
 
 
     , updateData: function () {
-
         var NEW = 'N'
             , DELETE = 'D'
             , ACTIVE = ''
@@ -661,7 +640,7 @@
 
 
     // Validacion
-
+    // Verifica que las preguntas requeridas estén contestadas
     , validateResponse: function (data, validationElements) {
         var me = this
             , element = null
@@ -677,14 +656,14 @@
             , value: null
         });
 
-        var deletedFilter = new Ext.util.Filter({
-            id: 'deleteFilter',
-            filterFn: function (model) {
-                return model.get('action') !== 'D';
-            }
-        })
+        //var deletedFilter = new Ext.util.Filter({
+        //    id: 'deleteFilter',
+        //    filterFn: function (model) {
+        //        return model.get('action') !== 'D';
+        //    }
+        //})
 
-        data.addFilter(deletedFilter);
+        //data.addFilter(deletedFilter);
 
 
         validationElements.each(function (validator, index) {
@@ -703,21 +682,25 @@
         return invalidElements;
     }
 
-
+    // Valida que esten contestadas el minimo de preguntas solicitadas a nivel formulario
     , validateMinResponse: function (validationElements) {
         var me = this
-            , numRespuestas = 0
+            , elementosContestados = 0
             , valido = false;
 
         validationElements.each(function (element, index) {
 
+            if (element.get('minimo') == null)
+                element.set('minimo', 0);
+
+            // Agregar validacion respuestas minimas por elemento
             if (element.get('numRespuestas') >= element.get('minimo')) {
 
-                numRespuestas++;
+                elementosContestados++;
 
-                if (numRespuestas == me.formModel.get('minimo')) {
+                if (elementosContestados >= me.formModel.get('minimo')) {
                     valido = true;
-                    return valido;
+                    //return valido;
                 }
             }
 
@@ -726,6 +709,27 @@
         return valido;
     }
 
+    // Valida que las preguntas requeridas o no, si están contestadas, tengan el minimo de respuetas indicadas
+    , validateMinResponseForElement: function (validationElements) {
+        var me = this
+            , invalidElements = [];
+
+        validationElements.each(function (validator, index) {
+
+            if (validator.get('elemento') == forms.utils.common.CONTROL_CODES.CHECK) {
+                if (validator.get('minimo') == null)
+                    validator.set('minimo', 0);
+
+                if  ( ( validator.get('requerido') == 'S' && (validator.get('numRespuestas') < validator.get('minimo')) ) || ( validator.get('requerido') == 'N' && validator.get('numRespuestas') > 0 &&  (validator.get('numRespuestas') < validator.get('minimo')) ) )
+                        invalidElements.push({ orden: validator.get('orden'), requerido: validator.get('requerido'), minimo: validator.get('minimo'), numRespuestas: validator.get('numRespuestas') });
+            
+            }
+
+        });
+
+
+        return invalidElements;
+    }
 
     , updateNumResponse: function (data) {
 
@@ -744,14 +748,14 @@
             , value: null
         });
 
-        var deletedFilter = new Ext.util.Filter({
-            id: 'deleteFilter',
-            filterFn: function (model) {
-                return model.get('action') !== 'D';
-            }
-        })
+        //var deletedFilter = new Ext.util.Filter({
+        //    id: 'deleteFilter',
+        //    filterFn: function (model) {
+        //        return model.get('action') !== 'D';
+        //    }
+        //})
 
-        data.addFilter(deletedFilter);
+        //data.addFilter(deletedFilter);
         data.addFilter(optionsFilter);
 
         me.elements.each(function (element, index) {
@@ -767,7 +771,10 @@
 
                 // Respuestas para el elemento
                 validator.set('numRespuestas', ((option.get('descripcion') == null || option.get('descripcion') == '') && option.get('fecha') == null) ? 0 : 1);
-
+            }
+            if (element.get('elemento') == forms.utils.common.CONTROL_CODES.SELECT) {
+                // Respuestas para el elemento
+                validator.set('numRespuestas', (data.count() == 0) ? 0 : 1);
             } else
                 // Respuestas para el elemento
                 validator.set('numRespuestas', data.count());
@@ -838,7 +845,7 @@
                     , dataArguments = []
                     , queryElements = 'INSERT INTO formsElementos (idFormElemento, idForm, elemento, descripcion, orden, minimo, requerido) VALUES'
                     , queryOptions = 'INSERT INTO fElementosOpciones (idFelementoOpcion, idFormElemento, descripcion, orden) VALUES'
-                    , queryData = 'INSERT INTO elementsData (idFelementoOpcion, idFormElemento, descripcion, fecha) VALUES';
+                    , queryData = 'INSERT INTO elementsData (idElementData, idFelementoOpcion, idFormElemento, idUsuario, descripcion, fecha) VALUES';
 
 
                     elementsStore.each(function (element, index) {
@@ -881,9 +888,11 @@
                                              arrDataValues = [];
 
                                              me.DBOptions.each(function (option, index) {
-                                                 dataArguments.push('(?, ?, ?, ?)');
+                                                 dataArguments.push('( ?, ?, ?, ?, ?, ? )');
+                                                 arrDataValues.push(forms.utils.common.guid()); // idUsuario
                                                  arrDataValues.push(option.get('idFelementoOpcion').trim());
                                                  arrDataValues.push(option.get('idFormElemento').trim());
+                                                 arrDataValues.push(0); // idUsuario
                                                  arrDataValues.push(option.get('descripcion'));
                                                  arrDataValues.push((option.get('fecha') == null ? null : (forms.utils.common.dateToUnixTime(option.get('fecha')))));
                                              });
@@ -1029,13 +1038,15 @@
         var me = this;
         var processedData = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })  // Mantiene en cache las respuestas de los elementos
         var option = null;
+        var element = null;
 
         me.localOptions.each(function (localOption, index) {
+            element = me.elements.getById(localOption.get('idFormElemento'));
 
             var DBOption = me.DBOptions.getById(localOption.get('idFelementoOpcion'));
 
             if (DBOption) {
-                if (localOption.get('descripcion') !== DBOption.get('descripcion') || localOption.get('fecha') !== DBOption.get('fecha')) {
+                if (element.get('elemento') == forms.utils.common.CONTROL_CODES.DATE || element.get('elemento') == forms.utils.common.CONTROL_CODES.TEXT) {
 
                     option = Ext.create('forms.model.option', {
                         idFelementoOpcion: localOption.get('idFelementoOpcion')
@@ -1043,6 +1054,7 @@
                         , orden: localOption.get('orden')
                         , descripcion: localOption.get('descripcion')
                         , fecha: localOption.get('fecha')
+                        , idElementData: localOption.get('idElementData')
                         , action: 'U'
                     });
 
@@ -1056,6 +1068,7 @@
                         , orden: localOption.get('orden')
                         , descripcion: localOption.get('descripcion')
                         , fecha: localOption.get('fecha')
+                        , idElementData: null
                         , action: 'N'
                 });
 
@@ -1074,6 +1087,7 @@
                         , orden: DBOption.get('orden')
                         , descripcion: DBOption.get('descripcion')
                         , fecha: DBOption.get('fecha')
+                        , idElementData: DBOption.get('idElementData')
                         , action: 'D'
                 });
 
@@ -1129,7 +1143,6 @@
     }
 
     , colectData: function ( isRemoteSave ) {
-
         var me = this
             , loadMask = new Ext.LoadMask({ message: 'Recolectando datos...' })
             , data = []
@@ -1160,7 +1173,12 @@
                 , option.get('descripcion')
                 , (forms.utils.common.CONTROL_CODES.DATE == element.get('elemento') ? (isRemoteSave ? forms.utils.common.serialize(option.get('fecha')) : option.get('fecha')) : null)
                 , option.get('action')
+                
             ]);
+
+
+            if (!isRemoteSave) 
+                data[data.length - 1].push(option.get('idElementData'))
         });
 
         optionsData.clearFilter();
@@ -1195,10 +1213,9 @@
             switch (row[4]) {
 
                 case 'U':
-                    updateArguments.push('SELECT ? AS idFelementoOpcion, ? AS idFormElemento, ? AS descripcion, ? AS fecha ');
+                    updateArguments.push('SELECT ? AS idElementData, ? AS descripcion, ? AS fecha ');
 
-                    updateValues.push(row[0].trim());
-                    updateValues.push(row[1].trim());
+                    updateValues.push(row[5].trim());
                     updateValues.push(row[2]);
                     updateValues.push(forms.utils.common.dateToUnixTime(row[3]));
 
@@ -1229,8 +1246,9 @@
             sql = updateArguments.join(' UNION ALL ');
 
             sql = 'WITH myCTE AS ( ' + sql + ') ' +
-                                    'UPDATE elementsData SET descripcion = (SELECT descripcion FROM myCTE WHERE idFelementoOpcion = elementsData.idFelementoOpcion AND idFormElemento = elementsData.idFormElemento) ' +
-                                    ', fecha = (SELECT fecha FROM myCTE WHERE idFelementoOpcion = elementsData.idFelementoOpcion AND idFormElemento = elementsData.idFormElemento )'
+                                    'UPDATE elementsData SET  descripcion = (SELECT descripcion FROM myCTE WHERE myCTE.idElementData = elementsData.idElementData )' +
+                                    ', fecha = (SELECT fecha FROM myCTE WHERE myCTE.idElementData = elementsData.idElementData )'
+                             
         } else {
             // Si no hay, se crea una consulta para obligar a execute a ejecutar el bloque
             sql = 'SELECT ? AS exec;'
@@ -1404,7 +1422,7 @@
 
     }
 
-    , finalize: function () {
+     , finalize: function () {
         var me = this
             , text = ''
         ;
@@ -1419,23 +1437,43 @@
 
                                 var invalidElements = me.validateResponse(me.localOptions, validationElements);
 
+                                
                                 if (invalidElements.length > 0) {
-                                    text = '<table style="border-collapse:collapse; border:1px solid #6E6E6E;"> <tr style="border:1px solid #6E6E6E;"> <td>N° </td> <td style="border:1px solid #6E6E6E;">Requerida </td> <td>Min. Resp. </td> <td style="border:1px solid #6E6E6E;">Num. Resp. </td> <tr>'
+                                    text = '<table style="border-collapse:collapse; border:1px solid #6E6E6E;width:100%"> <tr style="border:1px solid #6E6E6E;"> <td>N° </td> <td style="border:1px solid #6E6E6E;">Es Requerida </td> <td>Resp. requeridas </td> <tr>'
 
                                     Ext.Array.each(invalidElements, function (item, index) {
-                                        text = text + '<tr style="border:1px solid #6E6E6E;"> <td>' + item.orden + '</td> <td style="border:1px solid #6E6E6E;">' + (item.requerido == 'S' ? 'Si' : 'No') + '</td> <td>' + item.minimo + '</td> <td style="border:1px solid #6E6E6E;">' + item.numRespuestas + '</td>' + '</tr>';
+                                        text = text + '<tr style="border:1px solid #6E6E6E;"> <td>' + item.orden + '</td> <td style="border:1px solid #6E6E6E;">' + (item.requerido == 'S' ? 'Si' : 'No') + '</td> <td>' + item.minimo + '</td>' + '</tr>';
                                     });
 
                                     text = text + '</table>'
 
-                                    Ext.Msg.alert('Validación de la encuesta', text, Ext.emptyFn);
+                                    Ext.Msg.alert('Validación de la encuesta', 'Las siguientes preguntas son requeridas. <br>' + text, Ext.emptyFn);
 
 
-                                } else
-                                    if ( me.isDownload( me.formModel ) )
-                                        me.finalizeFromLocal();
-                                    else
-                                        me.remoteSave(true);
+                                } else {
+
+                                    invalidElements = me.validateMinResponseForElement(validationElements);
+
+                                    if (invalidElements.length > 0) {
+                                        text = '<table style="border-collapse:collapse; border:1px solid #6E6E6E;width:100%"> <tr style="border:1px solid #6E6E6E;"> <td>N° </td> <td style="border:1px solid #6E6E6E;">Requerida </td> <td>Min. Resp. </td> <td style="border:1px solid #6E6E6E;">Num. Resp. </td> <tr>'
+
+                                        Ext.Array.each(invalidElements, function (item, index) {
+                                            text = text + '<tr style="border:1px solid #6E6E6E;"> <td>' + item.orden + '</td> <td style="border:1px solid #6E6E6E;">' + (item.requerido == 'S' ? 'Si' : 'No') + '</td> <td>' + item.minimo + '</td> <td style="border:1px solid #6E6E6E;">' + item.numRespuestas + '</td>' + '</tr>';
+                                        });
+
+                                        text = text + '</table>'
+
+                                        Ext.Msg.alert('Validación de la encuesta', 'Es requerido que responda el mínimo de respuestas solicitadas. <br>' + text, Ext.emptyFn);
+
+
+                                    } else {
+
+                                        if (me.isDownload(me.formModel))
+                                            me.finalizeFromLocal();
+                                        else
+                                            me.remoteSave(true);
+                                    }
+                                }
                             } else {
                                 Ext.Msg.alert('Validación de la encuesta', 'Es requerido que responda al menos ' + me.formModel.get('minimo') + ' pregunta' + (me.formModel.get('minimo')  > 1 ?  's' : '') + ' de la encuesta.' , Ext.emptyFn);
 
@@ -1460,6 +1498,15 @@
                      }
                  });
 
+    }
+
+
+    , closeDB: function() {
+        forms.globals.DBManagger.connection.close(function () {
+            alert("DB closed!");
+        }, function (error) {
+            console.log("Error closing DB:" + error.message);
+        });
     }
 
 });
