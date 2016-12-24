@@ -84,18 +84,7 @@
             }
         }
 
-        , {
-            type: 'close',
-            itemId: 'download',
-            iconCls: 'fa fa-cloud-download',
-            tooltip: 'close',
-            callback: function (panel) {
-
-                panel.getController().downloadForm();
-
-            }
-        }
-
+       
 
     ]
 

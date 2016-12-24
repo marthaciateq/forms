@@ -23,13 +23,23 @@ Ext.define('forms.view.main.Main', {
     , flex: 1
 
     , listeners: {
-        initialize: 'getList'
+        initialize: 'getLocalData'
     }
 
 
 
     , tools: [
+
         {
+            itemId: 'close'
+            , type: 'close'
+            , hidden: false
+            , iconCls: 'xf fa-retweet'
+            , callback: function (panel) {
+                panel.getController().depurate();
+            }
+        }
+        , {
             itemId: 'close'
             , type: 'close'
             , hidden: false
@@ -38,6 +48,9 @@ Ext.define('forms.view.main.Main', {
             }
         }
 
+        
+        
+        
     ]
 
     , items: [
@@ -62,7 +75,17 @@ Ext.define('forms.view.main.Main', {
                                 text: ''
                                 , width: 32
                                 , renderer: function (value, record, index, cell, column, HTML) {
-                                    return '<div class="' + (record.get('fechaDescarga') == null ? 'x-fa fa-cloud' : 'x-fa fa-unlink') + '">' + '</div>';
+                                    return '<div class="' + (record.get('origen') == 'R' ? 'x-fa fa-cloud' : 'x-fa fa-unlink') + '">' + '</div>';
+                                }
+                                , cell: {
+                                    encodeHtml: false
+                                }
+                            }
+                            , {
+                                text: ''
+                                , width: 32
+                                , renderer: function (value, record, index, cell, column, HTML) {
+                                    return '<div class="' + (record.get('origen') == 'L' ? 'x-fa fa-download' : '') + '">' + '</div>';
                                 }
                                 , cell: {
                                     encodeHtml: false

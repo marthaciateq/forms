@@ -1,4 +1,4 @@
-/**
+ï»¿/**
  * The main application class. An instance of this class is created by app.js when it
  * calls Ext.application(). This is the ideal place to handle application launch and
  * initialization details.
@@ -7,7 +7,7 @@ Ext.define('forms.Application', {
     extend: 'Ext.app.Application'
 
     , name: 'forms'
-    , MODE: null // El modo en el que va a correr la APP (se establece en el método init)
+    , MODE: null // El modo en el que va a correr la APP (se establece en el mÃ©todo init)
     , stores: [
         // TODO: add global / shared stores here
     ]
@@ -29,14 +29,14 @@ Ext.define('forms.Application', {
     * Se aprovecha este evento para inicializar variables propias para configurar la app.
     */
     , init: function (app) {
-        var SERVER = 'http://172.16.6.120' // Es la IP del Servidor de DB al que se va a conectar la APP
-            , RUN_MODES = { DEVELOPMENT: /forms/, PRODUCTION: SERVER + '/forms/' } // Los modos en los que puede correr la APP, este objeto se inicializa en el metodo init de la app
+        var SERVER = 'http://200.33.18.35' // Es la IP del Servidor de DB al que se va a conectar la APP
+            , RUN_MODES = { DEVELOPMENT: /forms/, PRODUCTION: SERVER + '/' } // Los modos en los que puede correr la APP, este objeto se inicializa en el metodo init de la app
         ;
 
         /*
                 IMPORTANTE: Cambiar el valor de DEVELOPMENT a PRODUCTION cuando se vaya a compilar la APP
         */
-        this.MODE = RUN_MODES.DEVELOPMENT; // El modo en el que va a correr la APP
+        this.MODE = RUN_MODES.PRODUCTION; // El modo en el que va a correr la APP
     }
 
     /**
@@ -82,11 +82,28 @@ Ext.define('forms.Application', {
           //TEXT as ISO8601 strings ("YYYY-MM-DD HH:MM:SS.SSS").
           //REAL as Julian day numbers, the number of days since noon in Greenwich on November 24, 4714 B.C. according to the proleptic Gregorian calendar.
           //INTEGER as Unix Time, the number of seconds since 1970-01-01 00:00:00 UTC.
+
+          //tx.executeSql('DROP TABLE forms');
+          //tx.executeSql('DROP TABLE formsElementos');
+          //tx.executeSql('DROP TABLE fElementosOpciones');
+
+          //tx.executeSql('DROP TABLE formsUsuarios');
+
+          //tx.executeSql('DROP TABLE bformsUsuarios');
           //tx.executeSql('DROP TABLE elementsData');
-          tx.executeSql('CREATE TABLE IF NOT EXISTS forms (idForm TEXT PRIMARY KEY, descripcion TEXT, estatus TEXT, fecha TEXT, titulo TEXT, fcaducidad TEXT);');
+
+
+          tx.executeSql('CREATE TABLE IF NOT EXISTS forms (idForm TEXT PRIMARY KEY, titulo TEXT, descripcion TEXT, minimo INT, estatus TEXT, fcaducidad TEXT);');
           tx.executeSql('CREATE TABLE IF NOT EXISTS formsElementos (idFormElemento TEXT PRIMARY KEY, idForm TEXT, elemento INT, descripcion TEXT, orden INT, minimo INT, requerido TEXT);');
           tx.executeSql('CREATE TABLE IF NOT EXISTS fElementosOpciones (idFelementoOpcion TEXT PRIMARY KEY, idFormElemento TEXT, descripcion TEXT, orden INT);');
-          tx.executeSql('CREATE TABLE IF NOT EXISTS elementsData (idElementData TEXT PRIMARY KEY, idFelementoOpcion TEXT, idFormElemento TEXT, idUsuario TEXT, descripcion TEXT, fecha TEXT);');
+
+          tx.executeSql('CREATE TABLE IF NOT EXISTS formsUsuarios (idForm TEXT, idUsuario TEXT);');
+
+          tx.executeSql('CREATE TABLE IF NOT EXISTS bformsUsuarios (idFormUsuario TEXT PRIMARY KEY, idForm TEXT, idUsuario TEXT, estatus INT, fecha TEXT, latitud TEXT, longitud TEXT);');
+          tx.executeSql('CREATE TABLE IF NOT EXISTS elementsData (idElementData TEXT PRIMARY KEY, idFormUsuario TEXT, idFelementoOpcion TEXT, descripcion TEXT, fecha TEXT);');
+
+
+          
 
       }
 
@@ -95,11 +112,11 @@ Ext.define('forms.Application', {
         forms.globals.DBManagger.code = err.code;
         forms.globals.DBManagger.message = err.message;
 
-        Ext.Msg.alert('Iniciando la aplicación', "Ocurrio un error al intentar comunicarse con la DB. Favor de contactar al administrador de la App.", Ext.emptyFn);
+        Ext.Msg.alert('Iniciando la aplicaciÃ³n', "OcurriÃ³ un error al intentar comunicarse con la DB. Favor de contactar al administrador de la App.", Ext.emptyFn);
     }
 
     , successCreate: function () {
-        //alert("DB creada¡¡¡¡");
+        //alert("DB creadaÂ¡Â¡Â¡Â¡");
     }
     , onAppUpdate: function () {
         Ext.Msg.confirm('Application Update', 'This application has an update, reload?',

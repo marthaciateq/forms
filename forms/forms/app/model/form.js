@@ -36,18 +36,12 @@
        }
 
        , {
-           name: 'fechaDescarga'
-           , type: 'date'
-           , format: 'd/m/Y'
-           , submitFormat: 'd/m/Y'
-           , defaultValue: null
-           , convert: function (v, rec) {
-               return forms.utils.common.deserialize(v, 'MS', 'd/m/Y');
-           }
+           name: 'origen'
+          
        }
        , {
-           name: 'finalizado'
-           , type: 'boolean'
+           name: 'minimo'
+           , type: 'int'
        }
 
        , {

@@ -41,6 +41,7 @@
 
                     cm.set('loggedIn', true);
                     cm.set('idSession', login.idsesion);
+                    cm.set('idUsuario', login.idusuario);
 
                     // Crear la vista principal (Listado de encuestas)
                     var main = Ext.create('forms.view.main.Main');
@@ -65,11 +66,31 @@
 
             }
             , function (response, opts) { // failure
+                var text = ''
+
+                
+
+                
 
                 if (response.timedout)
-                    Ext.Msg.alert('Tiempo de esperaterminado', response.statusText, Ext.emptyFn);
-                else
-                    Ext.Msg.alert('Error no esperado', response.statusText, Ext.emptyFn);
+                    Ext.Msg.alert('Tiempo de espera terminado', response.statusText, Ext.emptyFn);
+                else {
+                    Ext.Object.each(response, function (key, value) {
+
+                        if (Ext.isObject(value)) {
+
+                            Ext.Object.each(value, function (subKey, subValue) {
+                                text += subKey + ':' + subValue + "<br>"
+                            });
+
+                        }
+
+                        text += key + ':' + value + "<br>"
+                    });
+
+                    Ext.Msg.alert('Trace', text, Ext.emptyFn);
+
+                }
 
             }
 
