@@ -24,7 +24,7 @@ Ext.define('forms.view.formsApplied.formsAppliedController', {
         var me = this;
 
         if (e.getTarget().className == 'x-fa fa-trash-o') {
-            Ext.Msg.confirm("Forms", "¿Desea eliminar la aplicación de encuesta seleccionada?"
+            Ext.Msg.confirm("Forms", "¿Desea eliminar la aplicación del formulario seleccionado?"
                     , function (response, eOpts, msg) {
                         if ('yes' == response) {
 
@@ -33,7 +33,16 @@ Ext.define('forms.view.formsApplied.formsAppliedController', {
                         }
                     });
         } else if (e.getTarget().className == 'x-fa fa-check-square-o' ||  record.get('estatus') == 'F' ) {
+            var form = Ext.create('forms.view.form.form', { title: this.formModel.get('titulo'), tooltip: this.formModel.get('titulo'), iconCls: 'x-fa fa-unlink' });
 
+            form.down('panelheader').getItems().getByKey('finish').hide();
+            form.down('panelheader').getItems().getByKey('save').hide();
+
+            Ext.Viewport.add(form);
+
+            form.show();
+            form.getController().formUserModel = record;
+            form.getController().move();
         }else{
 
             var form = Ext.create('forms.view.form.form', { title: this.formModel.get('titulo'), tooltip: this.formModel.get('titulo'), iconCls: 'x-fa fa-unlink' });
@@ -57,40 +66,7 @@ Ext.define('forms.view.formsApplied.formsAppliedController', {
         form.getController().move();
     }
     
-    
-    ///**
-    //* Obtiene un listado de los encuestas asignadas al usuario y las asigna al store de la vista principal
-    //*/
-    //, getList: function () {
-    //    // debugger;
-    //    var cm = forms.utils.common.coockiesManagement()
-    //        , idSession = cm.get('idSession');
-
-    //    var service = Ext.create('forms.model.model', { NAME: 'sps_forms_listar', idSession: idSession, start: 0, limit: 20 })
-    //        , formsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.form') })
-    //        , me = this
-
-    //    me.lookupReference('encuestasGrid').setStore(formsStore)
-    //    //me.lookupReference('encuestasGrid').getViewModel().getStore('{encuestas}').loadData(formsStore.data);
-
-    //    forms.utils.common.request(
-    //        service.getData()
-    //        , function (response, opts) {
-    //            var data = JSON.parse(response.responseText)
-    //            ;
-
-    //            if (data.type !== 'EXCEPTION')
-
-    //                me.lookupReference('encuestasGrid').getStore().loadData(data);
-    //            else
-    //                Ext.Msg.alert('Error', data.mensajeUsuario, Ext.emptyFn);
-    //        }
-    //        , function (response, opts) {
-    //            alert('Error no controlado');
-    //        }
-    //    );
-    //}
-
+  
     , getList: function () {
         var me = this
             , formsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.formUser') })
@@ -137,7 +113,7 @@ Ext.define('forms.view.formsApplied.formsAppliedController', {
                                tx.executeSql(sql, [idFormUsuario]
                                    , function (tx, result) {
 
-                                       Ext.Msg.alert('Forms', 'La aplicación de la encuesta se eliminó correctamente.', Ext.emptyFn);
+                                       Ext.Msg.alert('Forms', 'La aplicación del formulario se eliminó correctamente.', Ext.emptyFn);
 
                                        me.getList();
 

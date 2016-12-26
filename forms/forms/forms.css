@@ -1,0 +1,35 @@
+﻿.x-grid-row {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: table;
+    table-layout: fixed;
+    width: 0;
+    height: 64px;
+}
+
+.x-grid-row .left-panel{
+
+    width:80%;float:left;
+}
+
+.x-grid-row .title{
+
+    display:block;float:left;width:100%;
+}
+
+    .x-grid-row .sender {
+        display: block;
+        float: left;
+        width: 100%;
+        font-size: 11px;
+    }
+
+    .x-grid-row .date-panel {
+        width: 20%;
+        float: left;
+    }
+
+    .x-grid-row .date-value {
+        font-size:10px;display:block;float:right;
+    }

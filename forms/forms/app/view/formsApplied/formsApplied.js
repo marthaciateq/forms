@@ -18,7 +18,7 @@ Ext.define('forms.view.formsApplied.formsApplied', {
     , layout: 'fit'
     , controller: 'formsApplied'
     , reference: 'formsApplied'
-    , title: 'Encuestas Aplicadas'
+    , title: 'Listado de Formularios aplicados'
     , flex: 1
 
     , listeners: {
@@ -61,6 +61,7 @@ Ext.define('forms.view.formsApplied.formsApplied', {
                         xtype: 'grid'
                         , reference: 'formsAppliedGrid'
                         , itemiId: 'formsAppliedGrid'
+                        , emptyText: 'No se ha realizado ninguna aplicación de este formulario.'
                         , store: {}
 
                         , columns: [
@@ -76,16 +77,26 @@ Ext.define('forms.view.formsApplied.formsApplied', {
                             }
                             , {
                                 flex: 1
-                                , dataIndex: 'fecha'
-                                , text: 'Fecha de Aplicación'
+                                , text: 'Aplicación'
                                 , renderer: function (value, record, index, cell, column, HTML) {
-                                    return '<div>' + Ext.Date.format(record.get('fecha'), 'd M Y') + ' </div>';
+                                    return '<div>' + Ext.Date.format(record.get('fecha'), 'd M Y g:i') + ' </div>';
                                 }
                                 , cell: {
                                     encodeHtml: false
                                 }
 
 
+                            }
+
+                            , {
+                                flex: 1
+                                , text: 'Finalización'
+                                , renderer: function (value, record, index, cell, column, HTML) {
+                                    return '<div>' + Ext.Date.format(record.get('fechaFinalizacion'), 'd M Y g:i') + ' </div>';
+                                }
+                                , cell: {
+                                    encodeHtml: false
+                                }
                             }
 
                         ]

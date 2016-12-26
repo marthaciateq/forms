@@ -30,6 +30,16 @@
        }
 
        , {
+           name: 'fechaFinalizacion'
+           , type: 'date'
+           , format: 'd/m/Y'
+           , submitFormat: 'd/m/Y'
+           , defaultValue: null
+           , convert: function (v, rec) {
+               return forms.utils.common.unixTimeToDate(v);
+           }
+       }
+       , {
            name: 'latitud'
            , type: 'number'
        }

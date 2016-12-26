@@ -10,7 +10,6 @@
     * Inicia el proceso de inicio de sesión
     */
     , loginButton_tap: function () {
-
         var me = this
             , user = me.lookupReference('usernameText').getValue()
             , password = me.lookupReference('passwordText').getValue()
@@ -38,7 +37,7 @@
                     //if (login.idsesion !== null) {
 
                     var cm = forms.utils.common.coockiesManagement();
-
+                    
                     cm.set('loggedIn', true);
                     cm.set('idSession', login.idsesion);
                     cm.set('idUsuario', login.idusuario);

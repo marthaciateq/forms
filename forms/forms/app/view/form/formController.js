@@ -18,7 +18,7 @@
     * Realiza la acción mover del formulario
     */
     , move: function () {
-        var loadMask = new Ext.LoadMask({ message: 'Obteniendo elementos de la encuesta...' });
+        var loadMask = new Ext.LoadMask({ message: 'Obteniendo elementos del formulario...' });
 
         this.getView().setMasked(loadMask);
 
@@ -426,7 +426,7 @@
     * @param {Ext.data.Store} elementsStore Contiene la lista de preguntas del form.
     * @param {Ext.data.Store} optionsStore Contiene la lista de respuestas de cada pregunta de elementsStore.
     */
-    , renderControls: function (elementsStore, optionsStore) {
+    , renderControls: function (elementsStore, optionsStore, disabled) {
         var NEW = 'N'
             , DELETE = 'D'
             , ACTIVE = '';
@@ -441,6 +441,7 @@
             , currControl = null
             , elemento = null
             , options = []
+            , disabled = (me.formUserModel !== null ? me.formUserModel.get('estatus') == 'F' : false)
         ;
 
         // Recorrer los elementos del formulario
@@ -471,6 +472,7 @@
                     , displayField: 'text'
                     , name: defaultName
                     , reference: type + element.get('idFormElemento')
+                    , disabled: disabled
                 });
 
                 options.push({ text: 'Seleccione una opción', value: 'NULL' });
@@ -489,6 +491,7 @@
                         , inputValue: option.get('idFelementoOpcion')
                         , labelWidth: tm.getWidth(option.get('descripcion')) * WIDTH_FACTOR + MARGIN
                         , reference: defaultName
+                        , disabled: disabled
                     });
                 } else if (elemento == forms.utils.common.CONTROL_CODES.DATE || elemento == forms.utils.common.CONTROL_CODES.TIME) {
                     elementControl = Ext.create({
@@ -497,6 +500,7 @@
                         , dateFormat: 'd/m/Y'
                         , labelWidth: tm.getWidth(option.get('descripcion')) * WIDTH_FACTOR + MARGIN
                         , reference: defaultName
+                        , disabled: disabled
                     });
                 } else if (elemento == forms.utils.common.CONTROL_CODES.SELECT) {
                     options.push({ text: option.get('descripcion'), value: option.get('idFelementoOpcion') });
@@ -506,6 +510,7 @@
                         , name: defaultName
                         , labelWidth: tm.getWidth(option.get('descripcion')) * WIDTH_FACTOR + MARGIN
                         , reference: defaultName
+                        , disabled: disabled
                     });
 
                 elementControl.setLabel(option.get('descripcion'));
@@ -1103,7 +1108,7 @@
                                                  me.getView().getParent().down('formsApplied').getController().getList();
                                                  me.getView().destroy();
 
-                                                 Ext.Msg.alert('Encuestas', 'La encuesta se guardó correctamente', Ext.emptyFn);
+                                                 Ext.Msg.alert('Formularios', 'El formulario se guardó correctamente', Ext.emptyFn);
                                              }
 
                                             , function (tx, error) {
@@ -1246,9 +1251,9 @@
 
 
                                             var idFormUsuario = forms.utils.common.guid();
-                                            var values = [idFormUsuario, idForm, cm.get('idUsuario'), 'F', forms.utils.common.dateToUnixTime( new Date() ), position.coords.latitude, position.coords.longitude];
+                                            var values = [idFormUsuario, idForm, cm.get('idUsuario'), 'F', forms.utils.common.dateToUnixTime(new Date()), forms.utils.common.dateToUnixTime(new Date()), position.coords.latitude, position.coords.longitude];
 
-                                            sql = "INSERT INTO bformsUsuarios( idFormUsuario, idForm, idUsuario, estatus, fecha, latitud, longitud ) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                                            sql = "INSERT INTO bformsUsuarios( idFormUsuario, idForm, idUsuario, estatus, fecha, fechaFinalizacion, latitud, longitud ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
 
                                             forms.globals.DBManagger.connection.transaction(
@@ -1256,7 +1261,7 @@
                                                         tx.executeSql(sql, values
                                                              , function (tx, result) {
 
-                                                                 Ext.Msg.alert('Forms', 'La finalización de la encuesta se realizó con exito.', Ext.emptyFn);
+                                                                 Ext.Msg.alert('Forms', 'La finalización del formulario se realizó con exito.', Ext.emptyFn);
 
                                                                  me.getView().getParent().down('formsApplied').getController().getList();
 
@@ -1312,12 +1317,12 @@
 
                                             forms.globals.DBManagger.connection.transaction(
                                                 function (tx) {
-                                                    var sql = "UPDATE bformsUsuarios SET estatus = 'F' WHERE idFormUsuario = ? ;";
+                                                    var sql = "UPDATE bformsUsuarios SET estatus = ?, fechaFinalizacion = ? WHERE idFormUsuario = ? ;";
 
-                                                    tx.executeSql(sql, [idFormUsuario],
+                                                    tx.executeSql(sql, ['F', forms.utils.common.dateToUnixTime( new Date() ) , idFormUsuario],
                                                         function (tx, result) {
 
-                                                            Ext.Msg.alert('Forms', 'La finalización de la encuesta se realizo con exito.', Ext.emptyFn);
+                                                            Ext.Msg.alert('Forms', 'La finalización del formulario se realizo con exito.', Ext.emptyFn);
 
                                                             me.getView().getParent().down('formsApplied').getController().getList();
 
@@ -1364,7 +1369,7 @@
             , text = ''
         ;
 
-        Ext.Msg.confirm("Finalizar encuesta", "Una vez realizada esta acción ya no será posible modificar las respuestas de la encuesta. ¿Esta seguro de finalizar la encuesta?"
+        Ext.Msg.confirm("Finalizar formulario", "Una vez realizada esta acción ya no será posible modificar las respuestas del formulario. ¿Esta seguro de finalizar el formulario?"
                     , function (response, eOpts, msg) {
                         if (response == 'yes') {
                             me.updateData();
@@ -1384,7 +1389,7 @@
 
                                     text = text + '</table>'
 
-                                    Ext.Msg.alert('Validación de la encuesta', 'Las siguientes preguntas son requeridas. <br>' + text, Ext.emptyFn);
+                                    Ext.Msg.alert('Validación del formulario', 'Las siguientes preguntas son requeridas. <br>' + text, Ext.emptyFn);
 
 
                                 } else {
@@ -1400,7 +1405,7 @@
 
                                         text = text + '</table>'
 
-                                        Ext.Msg.alert('Validación de la encuesta', 'Es requerido que responda el mínimo de respuestas solicitadas. <br>' + text, Ext.emptyFn);
+                                        Ext.Msg.alert('Validación del formulario', 'Es requerido que responda el mínimo de respuestas solicitadas. <br>' + text, Ext.emptyFn);
 
 
                                     } else {
@@ -1412,7 +1417,7 @@
                                     }
                                 }
                             } else {
-                                Ext.Msg.alert('Validación de la encuesta', 'Es requerido que responda al menos ' + me.formModel.get('minimo') + ' pregunta' + (me.formModel.get('minimo')  > 1 ?  's' : '') + ' de la encuesta.' , Ext.emptyFn);
+                                Ext.Msg.alert('Validación del formulario', 'Es requerido que responda al menos ' + me.formModel.get('minimo') + ' pregunta' + (me.formModel.get('minimo')  > 1 ?  's' : '') + ' del formulario.' , Ext.emptyFn);
 
                             }
 
@@ -1428,7 +1433,7 @@
     , close: function () {
         var me = this;
 
-        Ext.Msg.confirm("Cerrar encuesta", "La información que no se haya guardado se perderá. ¿Desea continuar?"
+        Ext.Msg.confirm("Cerrar formulario", "La información que no se haya guardado se perderá. ¿Desea continuar?"
                  , function (response, eOpts, msg) {
                      if (response == 'yes') {
                          me.exit();
@@ -1440,9 +1445,9 @@
 
     , closeDB: function() {
         forms.globals.DBManagger.connection.close(function () {
-            alert("DB closed!");
+            //alert("DB closed!");
         }, function (error) {
-            console.log("Error closing DB:" + error.message);
+            console.log("Error al intentar cerrar la base de datos : " + error.message);
         });
     }
 

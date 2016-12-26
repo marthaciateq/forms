@@ -309,6 +309,9 @@
             "bundle": true,
             "exclude": ["fashion"]
         }
+		, {
+			"path" : "forms.css"
+		}
     ],
 
     /**

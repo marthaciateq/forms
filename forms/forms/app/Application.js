@@ -99,7 +99,7 @@ Ext.define('forms.Application', {
 
           tx.executeSql('CREATE TABLE IF NOT EXISTS formsUsuarios (idForm TEXT, idUsuario TEXT);');
 
-          tx.executeSql('CREATE TABLE IF NOT EXISTS bformsUsuarios (idFormUsuario TEXT PRIMARY KEY, idForm TEXT, idUsuario TEXT, estatus INT, fecha TEXT, latitud TEXT, longitud TEXT);');
+          tx.executeSql('CREATE TABLE IF NOT EXISTS bformsUsuarios (idFormUsuario TEXT PRIMARY KEY, idForm TEXT, idUsuario TEXT, estatus INT, fecha TEXT, fechaFinalizacion TEXT, latitud TEXT, longitud TEXT);');
           tx.executeSql('CREATE TABLE IF NOT EXISTS elementsData (idElementData TEXT PRIMARY KEY, idFormUsuario TEXT, idFelementoOpcion TEXT, descripcion TEXT, fecha TEXT);');
 
 

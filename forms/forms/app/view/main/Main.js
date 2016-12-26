@@ -1,4 +1,4 @@
-/**
+﻿/**
  * This class is the main view for the application. It is specified in app.js as the
  * "mainView" property. That setting causes an instance of this class to be created and
  * added to the Viewport container.
@@ -19,7 +19,7 @@ Ext.define('forms.view.main.Main', {
     , layout: 'fit'
     , controller: 'main'
     , reference: 'main'
-    , title: 'Encuestas'
+    , title: 'Listado de Formularios'
     , flex: 1
 
     , listeners: {
@@ -64,11 +64,11 @@ Ext.define('forms.view.main.Main', {
                         xtype: 'grid'
                         , reference: 'encuestasGrid'
                         , itemiId: 'encuestasGrid'
-                        //, viewModel: {
-                        //    type: 'main'
-                        //}
+                        , emptyText: 'No se encontraron formularios asignados'
+                       
+                     
                         , store: {}
-                        //, bind: '{encuestas}'
+              
 
                         , columns: [
                             {
@@ -93,13 +93,13 @@ Ext.define('forms.view.main.Main', {
                             }
                             , {
                                 flex: 1
-                                , text: 'Encuesta'
-                                , xtype: 'templatecolumn'
+                                , text: 'Formulario'
                                 , cell: { encodeHtml: false }
-                                , tpl: new Ext.XTemplate(
-                                                              '<div style="width:80%;float:left;"> <b style="display:block;float:left;width:100%;"> {titulo} </b> <p style="display:block;float:left;width:100%;font-size:11px;"> Envia: {nombreCompletoCreo} </p></div> <div style="width:20%;float:left;"> <span style="font-size:10px;display:block;float:right;">Caduca</br>{[Ext.Date.format(values.fCaducidad, "d M Y")]}</span> </div>'
+                                , renderer: function (value, record, index, cell, column, HTML) {
+                                    return '<div class="left-panel" style="' + (record.get('fCaducidad').getTime() < new Date().getTime() ? "background-color:#F5BCA9;" : "") + '"> <b class="title"> ' + record.get('titulo') + ' </b> <p class="sender"> Envia: ' + (record.get('nombreCompletoCreo') !== undefined ? record.get('nombreCompletoCreo') : '') + ' </p></div> <div class="date-panel" style="' + (record.get('fCaducidad').getTime() < new Date().getTime() ? "background-color:#F5BCA9;" : "") + '"> <span class="date-value">Fecha de expiración</br>' + Ext.Date.format(record.get('fCaducidad'), "d M Y") + '</span> </div>'
 
-                                                        )
+                                }
+
 
 
                             }

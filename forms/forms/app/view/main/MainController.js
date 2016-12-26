@@ -33,7 +33,7 @@ Ext.define('forms.view.main.MainController', {
 
         else if (e.getTarget().className == 'x-fa fa-download'){
         
-            Ext.Msg.confirm("Descargar encuesta", "Se va a descargar la encuesta al dispositivo. ¿Desea continuar?"
+            Ext.Msg.confirm("Descargar formulario", "Se va a descargar el formulario al dispositivo. ¿Desea continuar?"
                 , function (response, eOpts, msg) {
                     if ('yes' == response) {
 
@@ -44,7 +44,7 @@ Ext.define('forms.view.main.MainController', {
 
             if (me.isLocal(record)) {
                 //Crear la vista de detalle
-                var formsApplied = Ext.create('forms.view.formsApplied.formsApplied', { title: 'Encuestas aplicadas', tooltip: '', iconCls: 'x-fa fa-unlink' });
+                var formsApplied = Ext.create('forms.view.formsApplied.formsApplied', { title: record.get('titulo'), tooltip: 'Formularios aplicados', iconCls: 'x-fa fa-unlink' });
 
                 Ext.Viewport.add(formsApplied);
 
@@ -52,7 +52,7 @@ Ext.define('forms.view.main.MainController', {
                 formsApplied.getController().formModel = record;
                 formsApplied.getController().getList(record.get('idForm'));
             } else {
-                Ext.Msg.confirm("Descargar encuesta", "Se va a descargar la encuesta al dispositivo. ¿Desea continuar?"
+                Ext.Msg.confirm("Descargar formulario", "Se va a descargar el formulario al dispositivo. ¿Desea continuar?"
                 , function (response, eOpts, msg) {
                     if ('yes' == response) {
 
@@ -112,8 +112,12 @@ Ext.define('forms.view.main.MainController', {
 
                 if (data.type !== 'EXCEPTION') {
 
+                    Ext.Array.each(localData, function (data, index) {
+                        me.lookupReference('encuestasGrid').getStore().add(Ext.create('forms.model.form', {idForm: data.idForm, titulo: data.titulo, fCaducidad: forms.utils.common.unixTimeToDate(data.fCaducidad), descripcion: data.descripcion, estatus: data.estatus, origen: data.origen, minimo: data.minimo, numElementos: data.numElementos, nombreCompleto: data.nombreCompleto}));
 
-                    me.lookupReference('encuestasGrid').getStore().loadData(localData);
+
+                    });
+                    
 
                     var exist = false;
 
@@ -129,7 +133,7 @@ Ext.define('forms.view.main.MainController', {
                         me.lookupReference('encuestasGrid').getStore().loadData(remoteData, true);
 
 
-                    me.lookupReference('encuestasGrid').getStore().sort('fCaducidad', 'ASC')
+                    me.lookupReference('encuestasGrid').getStore().sort('fCaducidad', 'DESC')
                 }
                 else {
                     Ext.Msg.alert('Error no esperado', data.mensajeUsuario, Ext.emptyFn);
@@ -137,7 +141,7 @@ Ext.define('forms.view.main.MainController', {
                 }
             }
             , function (response, opts) {
-                Ext.Msg.alert('Error de comunicación', 'Ocurrio un error al tratar de obtener las encuestas del servidor, solo se muestras las encuestas que se encuentran almacenadas en el dispositivo movil.', Ext.emptyFn);
+                Ext.Msg.alert('Error de comunicación', 'Ocurrio un error al tratar de obtener los formularios del servidor, solo se muestran los formularios que se encuentran almacenados en el dispositivo movil.', Ext.emptyFn);
 
                 me.lookupReference('encuestasGrid').getStore().loadData(localData);
             }
@@ -160,7 +164,7 @@ Ext.define('forms.view.main.MainController', {
         forms.globals.DBManagger.connection.transaction(
             function (tx) {
                 var cm = forms.utils.common.coockiesManagement()
-                var sql = "SELECT forms.*, 'L' AS origen  FROM forms INNER JOIN formsUsuarios ON forms.idForm = formsUsuarios.idForm WHERE idUsuario = ?;";
+                var sql = "SELECT forms.idForm, titulo, descripcion, minimo, estatus, fcaducidad AS 'fCaducidad', 'L' AS origen  FROM forms INNER JOIN formsUsuarios ON forms.idForm = formsUsuarios.idForm WHERE idUsuario = ?;";
                 //var sql ="SELECT * FROM forms;"
 
                 tx.executeSql(sql, [cm.get('idUsuario')],
@@ -189,7 +193,7 @@ Ext.define('forms.view.main.MainController', {
            , modelRequest = Ext.create('forms.model.form', { NAME: 'sps_forms_download', idForm: idForm, idSession: cm.get('idSession'), latitud: position.coords.latitude, longitud: position.coords.longitude  })
            , elementsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.element') })
            , optionsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })
-           , loadMask = new Ext.LoadMask({ message: 'Obteniendo encuesta...' });
+           , loadMask = new Ext.LoadMask({ message: 'Obteniendo formularios...' });
             ;
 
             me.getView().add(loadMask);
@@ -211,8 +215,8 @@ Ext.define('forms.view.main.MainController', {
 
                         // Posibles respuestas
                         optionsStore.loadData(data[2]);
-
-                        arrDataValues = [form.get('idForm'), form.get('titulo'), form.get('descripcion'), form.get('minimo'), '1', form.get('fCaducidad')];
+                        
+                        arrDataValues = [form.get('idForm'), form.get('titulo'), form.get('descripcion'), form.get('minimo'), '1', forms.utils.common.dateToUnixTime(form.get('fCaducidad'))];
 
                         forms.globals.DBManagger.connection.transaction(
                             function (tx) {
@@ -412,7 +416,7 @@ Ext.define('forms.view.main.MainController', {
 
     , depurate: function () {
         var me = this;
-        Ext.Msg.confirm("Depuración de encuestas", "Este proceso eliminará del dispositivo movil las encuestas que están caducadas y/o canceladas. <br>Las aplicaciones de encuestas que ya fueron finalizadas no son afectadas. <br> <br> ¿Desea continuar?"
+        Ext.Msg.confirm("Depuración de formularios", "Este proceso eliminará del dispositivo movil los formularios que están caducados y/o canceladas. <br>Las aplicaciones finalizadas no son afectadas. <br> <br> ¿Desea continuar?"
            , function (response, eOpts, msg) {
                if ('yes' == response) {
 
@@ -517,7 +521,7 @@ Ext.define('forms.view.main.MainController', {
                                                                            tx.executeSql(sql, deleteValues
                                                                                , function (tx, result) {
 
-                                                                                   Ext.Msg.alert('Depuración de encuestas.', 'La depuración se realizó con exito.', Ext.emptyFn);
+                                                                                   Ext.Msg.alert('Depuración de formularios.', 'La depuración se realizó con exito.', Ext.emptyFn);
 
                                                                                    me.getLocalData();
 
@@ -563,7 +567,7 @@ Ext.define('forms.view.main.MainController', {
 
                                } else {
 
-                                   Ext.Msg.alert('Depuración de encuestas.', 'No se detectaron encuestas para ser depuradas.', Ext.emptyFn);
+                                   Ext.Msg.alert('Depuración de formularios.', 'No se detectaron formularios para ser depurados.', Ext.emptyFn);
                                }
 
 

@@ -73,7 +73,7 @@ Ext.define('forms.utils.common',
         , coockiesManagement: function () {
             me = this;
             return {
-
+                
                 get: function (name) {
                     if (this.exist(name))
                         return JSON.parse(sessionStorage.getItem(name));
