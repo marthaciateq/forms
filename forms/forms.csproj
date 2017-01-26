@@ -61,8 +61,6 @@
     <Reference Include="System.EnterpriseServices" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="bootstrap.css" />
-    <Content Include="bootstrap.js" />
     <Content Include="css\bootstrap-theme.css.map" />
     <Content Include="css\bootstrap.css.map" />
     <Content Include="forms\.sencha\app\app.defaults.json" />
@@ -86,6 +84,7 @@
     <Content Include="forms\.sencha\workspace\sencha.cfg" />
     <Content Include="forms\app.json" />
     <Content Include="forms\app\model\element.js" />
+    <Content Include="forms\app\model\formUser.js" />
     <Content Include="forms\app\model\requiredElement.js" />
     <Content Include="forms\app\model\form.js" />
     <Content Include="forms\app\model\model.js" />
@@ -95,11 +94,12 @@
     <Content Include="forms\app\store\ajaxStore.js" />
     <Content Include="forms\app\store\localStore.js" />
     <Content Include="forms\app\store\Readme.md" />
-    <Content Include="bootstrap.json" />
     <None Include="forms\bootstrap.json" />
     <Content Include="forms\app\utils\common.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="forms\app\view\formsApplied\formsApplied.js" />
+    <Content Include="forms\app\view\formsApplied\formsAppliedController.js" />
     <Content Include="forms\app\view\form\form.js" />
     <Content Include="forms\app\view\form\formController.js" />
     <Content Include="forms\app\view\login\login.js" />
@@ -1521,6 +1521,7 @@
     <Content Include="forms\ext\sass\etc\font-ext-variables.scss" />
     <Content Include="forms\ext\sass\etc\font-pictos-variables.scss" />
     <Content Include="forms\ext\version.properties" />
+    <Content Include="forms\forms.css" />
     <Content Include="forms\Readme.md" />
     <Content Include="forms\resources\Readme.md" />
     <Content Include="forms\sass\config.rb" />
@@ -7202,6 +7203,9 @@
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
@@ -7219,6 +7223,9 @@
           <CustomServerUrl>
           </CustomServerUrl>
           <SaveServerSettingsInUserFile>False</SaveServerSettingsInUserFile>
+          <servers defaultServer="">
+            <server name="SelfHostServer" exePath="" cmdArgs="" url="http://localhost:62995/" workingDir="" />
+          </servers>
         </WebProjectProperties>
       </FlavorProperties>
     </VisualStudio>

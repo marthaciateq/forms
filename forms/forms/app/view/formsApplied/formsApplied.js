@@ -13,9 +13,10 @@ Ext.define('forms.view.formsApplied.formsApplied', {
 
         , 'forms.view.formsApplied.formsAppliedController'
         , 'Ext.form.Panel'
+
     ]
 
-    , layout: 'fit'
+    , layout: 'vbox'
     , controller: 'formsApplied'
     , reference: 'formsApplied'
     , title: 'Listado de Formularios aplicados'
@@ -25,33 +26,60 @@ Ext.define('forms.view.formsApplied.formsApplied', {
         //initialize: 'getList'
     }
 
+    
 
 
-    , tools: [
-        {
-            itemId: 'close'
-            , type: 'close'
-            , hidden: false
-            , callback: function (panel) {
-                panel.getController().close();
-            }
-        }
+    //, tools: [
+    //    {
+    //        type: 'next'
+    //        , itemId: 'edit'
+    //        , iconCls: 'fa fa-edit'
+    //        , callback: function (panel) {
+    //            var controller = panel.getController();
 
-        , {
-            type: 'next'
-            , itemId: 'edit'
-            , iconCls: 'fa fa-edit'
-            , callback: function (panel) {
-                var controller = panel.getController();
+    //            controller.applyNewForm();
+    //        }
+    //    }
 
-                controller.applyNewForm();
-            }
-        }
+    //    , {
+    //        itemId: 'close'
+    //        , type: 'close'
+    //        , hidden: false
+    //        , callback: function (panel) {
+    //            panel.getController().close();
+    //        }
+    //    }
 
-    ]
+    //]
 
     , items: [
             {
+                xtype: 'fieldset',
+                layout: 'hbox',
+                margin: 2,
+                padding: 2,
+                items: [
+                    {
+                        xtype: 'spacer'
+                    }
+                     , {
+                         xtype: 'button',
+                         iconCls: 'fa fa-edit',
+                         text: 'Aplicar formulario',
+                         listeners: {
+                             'tap': 'applyNewForm'
+                         }
+                     }
+                    , {
+                        xtype: 'button',
+                        iconCls: 'fa fa-close',
+                        listeners: {
+                            'tap': 'close'
+                        }
+                    }
+                ]
+            }
+           , {
                 xtype: 'container'
                 , reference: 'cntGrid'
                 , flex: 1

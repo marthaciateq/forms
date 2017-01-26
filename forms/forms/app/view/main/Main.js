@@ -16,7 +16,7 @@ Ext.define('forms.view.main.Main', {
         , 'Ext.form.Panel'
     ]
 
-    , layout: 'fit'
+    , layout: 'vbox'
     , controller: 'main'
     , reference: 'main'
     , title: 'Listado de Formularios'
@@ -26,35 +26,59 @@ Ext.define('forms.view.main.Main', {
         initialize: 'getLocalData'
     }
 
+   
+    //, tools: [
 
+    //    {
+    //        itemId: 'close'
+    //        , type: 'close'
+    //        , hidden: false
+    //        , iconCls: 'fa fa-retweet'
+    //        , callback: function (panel) {
+    //            panel.getController().depurate();
+    //        }
+    //    }
+    //    , {
+    //        itemId: 'close'
+    //        , type: 'close'
+    //        , hidden: false
+    //        , callback: function (panel) {
+    //            panel.getController().logout();
+    //        }
+    //    }
 
-    , tools: [
-
-        {
-            itemId: 'close'
-            , type: 'close'
-            , hidden: false
-            , iconCls: 'xf fa-retweet'
-            , callback: function (panel) {
-                panel.getController().depurate();
-            }
-        }
-        , {
-            itemId: 'close'
-            , type: 'close'
-            , hidden: false
-            , callback: function (panel) {
-                panel.getController().logout();
-            }
-        }
-
+                
         
-        
-        
-    ]
+    //]
 
     , items: [
-            {
+         {
+             xtype: 'fieldset',
+             layout: 'hbox',
+             margin: 2,
+             padding: 2,
+             items: [
+                 {
+                     xtype: 'spacer'
+                 }
+                  , {
+                      xtype: 'button',
+                      text: 'Depurar formularios',
+                    iconCls: 'fa fa-retweet',
+                    listeners: {
+                        'tap' : 'depurate'
+                    }
+                 }
+                 , {
+                     xtype: 'button',
+                     iconCls: 'fa fa-close',
+                     listeners: {
+                         'tap' : 'logout'
+                     }
+                 }
+             ]
+         }
+          ,  {
                 xtype: 'container'
                 , reference: 'cntGrid'
                 , flex: 1

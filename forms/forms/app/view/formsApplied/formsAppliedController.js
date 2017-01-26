@@ -15,28 +15,29 @@ Ext.define('forms.view.formsApplied.formsAppliedController', {
         , 'forms.model.form'
         , 'forms.model.element'
         , 'forms.model.option'
+        , 'forms.model.formUser'
+
     ]
 
     , formModel: null
 
    
     , formsAppliedGrid_itemtap: function (grid, index, target, record, e, eOpts) {
-        var me = this;
+        var me = this
+            , form = null;
 
         if (e.getTarget().className == 'x-fa fa-trash-o') {
-            Ext.Msg.confirm("Forms", "¿Desea eliminar la aplicación del formulario seleccionado?"
+            Ext.Msg.confirm("Formularios", "¿Desea eliminar la aplicación del formulario seleccionado?"
                     , function (response, eOpts, msg) {
                         if ('yes' == response) {
-
                             me.deleteAppliedForm(record.get('idFormUsuario'));
-
                         }
                     });
         } else if (e.getTarget().className == 'x-fa fa-check-square-o' ||  record.get('estatus') == 'F' ) {
-            var form = Ext.create('forms.view.form.form', { title: this.formModel.get('titulo'), tooltip: this.formModel.get('titulo'), iconCls: 'x-fa fa-unlink' });
+            form = Ext.create('forms.view.form.form', { title: this.formModel.get('titulo'), tooltip: this.formModel.get('titulo'), iconCls: 'x-fa fa-unlink' });
 
-            form.down('panelheader').getItems().getByKey('finish').hide();
-            form.down('panelheader').getItems().getByKey('save').hide();
+            form.down('container[itemId=cntButtons]').getItems().getByKey('cmdFinish').hide();
+            form.down('container[itemId=cntButtons]').getItems().getByKey('cmdSave').hide();
 
             Ext.Viewport.add(form);
 
@@ -44,8 +45,7 @@ Ext.define('forms.view.formsApplied.formsAppliedController', {
             form.getController().formUserModel = record;
             form.getController().move();
         }else{
-
-            var form = Ext.create('forms.view.form.form', { title: this.formModel.get('titulo'), tooltip: this.formModel.get('titulo'), iconCls: 'x-fa fa-unlink' });
+            form = Ext.create('forms.view.form.form', { title: this.formModel.get('titulo'), tooltip: this.formModel.get('titulo'), iconCls: 'x-fa fa-unlink' });
 
             Ext.Viewport.add(form);
 
@@ -70,7 +70,11 @@ Ext.define('forms.view.formsApplied.formsAppliedController', {
     , getList: function () {
         var me = this
             , formsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.formUser') })
-        ;
+            , loadMask = new Ext.LoadMask({ message: 'Obteniendo el listado...' });
+
+        me.getView().add(loadMask);
+
+        loadMask.show();
 
         var _1KB = 1024 // bytes
         _1MB = _1KB * 1024 // 1024 kbytes
@@ -84,22 +88,43 @@ Ext.define('forms.view.formsApplied.formsAppliedController', {
                 var sql = 'SELECT bformsUsuarios.*, forms.minimo FROM bformsUsuarios INNER JOIN forms ON bformsUsuarios.idForm = forms.idForm WHERE idUsuario = ? and bformsUsuarios.idForm = ?;';
 
                 tx.executeSql(sql, [cm.get('idUsuario'), me.formModel.get('idForm')],
-                    function (tx, result) {
+                    function (tx, records) {
 
-                        me.lookupReference('formsAppliedGrid').getStore().loadData(result.rows)
+                        var index = 0
+                            , record = null
+                            , maxRecords = records.rows.length;
+
+                        // IMPORTANTE: Cambiar esto por un for
+                        for (index = 0; index < maxRecords; index++) {
+                            record = records.rows.item(index);
+
+                            me.lookupReference('formsAppliedGrid').getStore().add(Ext.create('forms.model.formUser', { idFormUsuario: record.idFormUsuario, idForm: record.idForm, fecha: record.fecha, fechaFinalizacion: record.fechaFinalizacion, latitud: record.latitud, longitud: record.longitud, minimo: record.minimo, estatus: record.estatus }));
+                        }
+
+                        loadMask.hide();
+                        
                     }
 
-                    , me.selectError)
+                    , function (error) {
+                        loadMask.hide();
+                        Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                    })
             }
-            , function (err) {
-                alert(err.message);
+            , function (error) {
+                loadMask.hide();
+                Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
             });
 
     }
 
     , deleteAppliedForm: function (idFormUsuario) {
         var sql = 'DELETE FROM elementsData WHERE idFormUsuario = ?; '
-            , me = this;
+            , me = this
+            , loadMask = new Ext.LoadMask({ message: 'Eliminando la aplicación del formulario...' });
+
+        me.getView().add(loadMask);
+
+        loadMask.show();
 
 
         forms.globals.DBManagger.connection.transaction(
@@ -112,32 +137,33 @@ Ext.define('forms.view.formsApplied.formsAppliedController', {
 
                                tx.executeSql(sql, [idFormUsuario]
                                    , function (tx, result) {
-
+                                       loadMask.hide();
                                        Ext.Msg.alert('Forms', 'La aplicación del formulario se eliminó correctamente.', Ext.emptyFn);
 
                                        me.getList();
-
                                    }
-
                                    , function (tx, error) {
-                                       alert(error.message);
+                                       loadMask.hide();
+                                       Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
                                    });
                            }
 
                           , function (tx, error) {
-                              alert(error.message);
+                              loadMask.hide();
+                              Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
                           });
-
-
                   }
 
               , function (error) {
-                  alert(error.message);
+                  loadMask.hide();
+                  Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
               });
     }
 
     , close: function () {
         this.getView().destroy();
     }
+
+   
 
 });

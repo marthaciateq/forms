@@ -37,7 +37,7 @@
                     //if (login.idsesion !== null) {
 
                     var cm = forms.utils.common.coockiesManagement();
-                    
+
                     cm.set('loggedIn', true);
                     cm.set('idSession', login.idsesion);
                     cm.set('idUsuario', login.idusuario);
@@ -53,41 +53,45 @@
                     Ext.Viewport.add(main);
 
                     main.show();
+
+                    // Ocultar mascara
+                    loadMask.hide();
                     //}
 
 
-                } else
+                } else {
+                    
+                    // Ocultar mascara
+                    loadMask.hide();
+
                     Ext.Msg.alert('Error al iniciar sesión', 'No se ha podido iniciar sesión con los datos proporcionados, favor de verificar usuario y clave.', Ext.emptyFn);
-
-                //}
-
-
+                }
 
             }
             , function (response, opts) { // failure
                 var text = ''
 
-                
-
-                
-
-                if (response.timedout)
+                if (response.timedout) {
+                    loadMask.hide();
                     Ext.Msg.alert('Tiempo de espera terminado', response.statusText, Ext.emptyFn);
+                }
                 else {
-                    Ext.Object.each(response, function (key, value) {
+                    //Ext.Object.each(response, function (key, value) {
 
-                        if (Ext.isObject(value)) {
+                    //    if (Ext.isObject(value)) {
 
-                            Ext.Object.each(value, function (subKey, subValue) {
-                                text += subKey + ':' + subValue + "<br>"
-                            });
+                    //        Ext.Object.each(value, function (subKey, subValue) {
+                    //            text += subKey + ':' + subValue + "<br>"
+                    //        });
 
-                        }
+                    //    }
 
-                        text += key + ':' + value + "<br>"
-                    });
+                    //    text += key + ':' + value + "<br>"
+                    //});
 
-                    Ext.Msg.alert('Trace', text, Ext.emptyFn);
+                    loadMask.hide();
+
+                    Ext.Msg.alert('Error al intentar realizar la acción', "Verifique que su conexión wifi o el servicio de datos esten activos.", Ext.emptyFn);
 
                 }
 
@@ -95,13 +99,14 @@
 
             , forms.globals.root + 'pages/login.aspx');
 
-        } else
+        } else {
+            // Ocultar mascara
+            loadMask.hide();
+
             Ext.Msg.alert('Error al iniciar sesión', 'Favor de proporcionar la cuenta de usuario y la clave.', Ext.emptyFn);
 
-        // Ocultar mascara
-        loadMask.hide();
+        }
 
     }
-
 
 });

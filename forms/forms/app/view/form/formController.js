@@ -10,43 +10,39 @@
     , totalRecords: 0
     , elements: Ext.create('forms.store.localStore', { model: Ext.create('forms.model.element') }) // Mantiene en cache los elementos del form
     , options: Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })  // Mantiene en cache las opciones del elemento
-    , DBOptions: Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })  // Mantiene en cache las respuestas de los elementos
-    , localOptions: Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })  // Mantiene en cache las respuestas de los elementos
-    , allElements: Ext.create('forms.store.localStore', { model: Ext.create('forms.model.requiredElement') })
+    , DBOptions: Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })  // Mantiene en cache las respuestas de los elementos (Obtenidas desde la DB remota)
+    , localOptions: Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })  // Mantiene en cache las respuestas de los elementos (Obtenidas desde la DB local)
+    , allElements: Ext.create('forms.store.localStore', { model: Ext.create('forms.model.requiredElement') }) // Mantiene en cache un listado de elementos usados para validar los elementos requeridos
 
     /**
     * Realiza la acción mover del formulario
     */
     , move: function () {
-        var loadMask = new Ext.LoadMask({ message: 'Obteniendo elementos del formulario...' });
 
-        this.getView().setMasked(loadMask);
+        var hasRecords = null
+            , me = this;
 
-        var hasRecords = null;
-
-        this.start = (this.page == 1) ? 0 : (this.limit * (this.page - 1));
+        me.start = (me.page == 1) ? 0 : (me.limit * (me.page - 1));
 
         // Quitar todo el contenido del form
-        this.getView().removeAll();
+        me.getView().lookupReference('cntControls').removeAll();
 
         // Detectar si ya hay elementos cacheados de la nueva pagina
-        hasRecords = this.elements.findRecord('page', this.page, 0, false, true, true);
-
+        hasRecords = me.elements.findRecord('page', me.page, 0, false, true, true);
 
         // Obtener los nuevos elementos y renderizarlos
         if (hasRecords == null)
-            this.getDetailsById(this.formModel);
+            me.getDetailsById(me.formModel);
         else
-            this.getCacheData(this.page);
-
-        this.getView().setMasked(false);
+            me.getCacheData(me.page);
     }
 
     /**
     * Realiza la acción: moverse hacia la siguiente página del form
     */
     , next: function (next) {
-        var me = this;
+        var me = this
+            , MAX_PAGES = 0;
 
         me.updateData();
 
@@ -60,7 +56,32 @@
         if (me.page > 1)
             next.getParent().getItems().getByKey('prev').show();
 
-        var MAX_PAGES = Math.ceil(me.totalRecords / me.limit);
+        MAX_PAGES = Math.ceil(me.totalRecords / me.limit);
+
+        if (me.page == MAX_PAGES)
+            next.hide();
+    }
+
+    , bNext: function () {
+        var me = this
+            , MAX_PAGES = 0;
+
+        var prev = me.getView().lookupReference('cmdPrevious');
+        var next = me.getView().lookupReference('cmdNext');
+
+        me.updateData();
+
+        // Incrementar el indicador de pagina
+        me.page++;
+
+        // Moverse
+        me.move();
+
+        // Actualizar la apariencia de los controles
+        if (me.page > 1)
+            prev.show();
+
+        MAX_PAGES = Math.ceil(me.totalRecords / me.limit);
 
         if (me.page == MAX_PAGES)
             next.hide();
@@ -93,15 +114,37 @@
         }
     }
 
+
+    , bPrevious: function () {
+        var me = this;
+        var prev = me.getView().lookupReference('cmdPrevious');
+        var next = me.getView().lookupReference('cmdNext');
+        me.updateData();
+        
+        // Decrementar el indicador de pagina
+        me.page--;
+
+        // Moverse
+        me.move();
+
+        // Actualizar aspecto de los controles
+        if (me.page == 1) {
+            prev.hide();
+
+            if (me.totalRecords > me.start + me.limit)
+                next.show();
+
+        } else {
+            next.show();
+        }
+    }
+
    
     /**
     * Consulta el backend y obtiene la estructura de la encuesta solicitada. La estructura obtenida corresponde al bloque de la página solicitada
     * @param {Ext.data.Model} formModel Es el form del cual se quiere obtener la estructura.
     */
     , getDetailsById: function (formModel) {
-        //this.formModel = formModel;
-        //this.totalRecords = this.formModel.get('numElementos');
-
         if (this.formModel !== null )
             this.getFormStructure()
         else
@@ -115,7 +158,12 @@
             , idFormUsuario = this.formUserModel.get('idFormUsuario').trim()
             , elementsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.element') })
             , optionsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })
+            , loadMask = new Ext.LoadMask({ message: 'Obteniendo datos de formulario...' })
         ;
+
+        me.getView().add(loadMask);
+
+        loadMask.show();
 
         forms.globals.DBManagger.connection.transaction(
             function (tx) {
@@ -123,37 +171,42 @@
 
                 tx.executeSql(sqlCount, [idForm],
                     function (tx, result) {
-                        me.totalRecords = result.rows[0].totalRecords;
+                        me.totalRecords = result.rows.item(0).totalRecords;
 
-                        var sql = 'WITH myCTE AS ( ' +
-                                    '			SELECT idFormElemento AS id ' +
-                                    '				, elemento ' +
-                                    
-                                    '				, descripcion ' +
-                                    '				, orden ' +
-                                    '				, requerido ' +
-                                    '				, minimo ' +
-                                    '			FROM	formsElementos  ' +
-                                    '	WHERE idForm = ? AND orden > ? AND orden <= ? ' +
-                                    ') ' +
-                                    '	SELECT id, elemento, 0 AS pid, 0 AS gpid, descripcion, orden, requerido, minimo, 0 AS nivel FROM myCTE' +
+                        var subQuery = 'SELECT idFormElemento AS id ' +
+                        '				, elemento ' +
+                        '				, descripcion ' +
+                        '				, orden ' +
+                        '				, requerido ' +
+                        '				, minimo ' +
+                        '			FROM	formsElementos  ' +
+                        '	WHERE idForm = ? AND orden > ? AND orden <= ? ';
+
+
+                        var sql =  '	SELECT id, elemento, 0 AS pid, 0 AS gpid, descripcion, orden, requerido, minimo, 0 AS nivel FROM (' + subQuery + ') AS myCTE' +
                                     '	UNION ALL ' +
                                     '	SELECT idFelementoOpcion As id, 0 AS elemento, idformElemento AS pid, 0 AS gpid, felementosOpciones.descripcion, felementosOpciones.orden, "N" AS requerido, 0 as minimo, 1 AS nivel FROM felementosOpciones' +
-                                    '	INNER JOIN myCTE ON felementosOpciones.idformElemento = myCTE.id ' +
+                                    '	INNER JOIN ( ' + subQuery + ' )AS myCTE ON felementosOpciones.idformElemento = myCTE.id ' +
                                     '   UNION ALL ' +
                                     '   SELECT idElementData AS id, fecha AS elemento, elementsData.idFelementoOpcion AS pid, idformElemento AS gpid, elementsData.descripcion, 0 AS orden, "N" AS requerido, 0 AS minimo, 2 AS nivel ' +
-                                    '   FROM MyCTE ' +
+                                    '   FROM (' + subQuery + ') AS MyCTE ' +
                                     '       INNER JOIN felementosOpciones ON myCTE.id = felementosOpciones.idformElemento ' +
                                     '       INNER JOIN elementsData ON felementosOpciones.idFelementoOpcion = elementsData.idFelementoOpcion ' +
                                     ' WHERE idFormUsuario = ?'
 
-                        tx.executeSql(sql, [idForm, me.start, me.start + me.limit, idFormUsuario]
+                        tx.executeSql(sql, [idForm, me.start, me.start + me.limit, idForm, me.start, me.start + me.limit, idForm, me.start, me.start + me.limit, idFormUsuario]
                             , function (tx, records) {
-                                var model = null;
-                                var DBModel = null;
-                                var localModel = null;
+                                var model = null
+                                    , record = null
+                                    , DBOption = null
+                                    , localOption = null
+                                    , index = 0
+                                    , maxRecords = records.rows.length;
 
-                                Ext.Array.each(records.rows, function (record, index) {
+                                // IMPORTANTE: Cambiar esto por un for
+                                for (index = 0; index < maxRecords; index++){
+                                    record = records.rows.item(index);
+                                //Ext.Array.each(records.rows, function (record, index) {
                                     switch (record.nivel) {
 
                                         case 0:
@@ -174,7 +227,7 @@
                                             break;
                                     }
 
-                                });
+                                }
 
                                 // Cachear los nuevos elementos y sus opciones correspondientes
                                 me.elements.loadData(elementsStore.getRange(0, elementsStore.count()), true);
@@ -216,32 +269,47 @@
 
                                     tx.executeSql(sql, [idFormUsuario, idForm]
                                         , function (tx, records) {
-                                            var model = null;
 
-                                            me.allElements.loadData(records.rows);
+                                            var index = 0
+                                                , record = null
+                                                , maxRecords = records.rows.length;
 
+                                            for (index = 0; index < maxRecords; index++) {
+                                                record = records.rows.item(index);
+                                                me.allElements.add(Ext.create('forms.model.requiredElement', { idFormElemento: record.idFormElemento, numRespuestas: record.numRespuestas, elemento: record.elemento, requerido: record.requerido, respuestaValida: record.respuestaValida, orden: record.orden, minimo: record.minimo }));
+                                            }
+
+                                            loadMask.hide();
                                             me.renderControls(elementsStore, optionsStore);
                                         }
 
-                                        , me.selectError);
+                                        , function (tx, error) {
+                                            loadMask.hide();
+                                            Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                                        });
 
-                                } else
+                                } else {
+                                    loadMask.hide();
                                     me.renderControls(elementsStore, optionsStore);
-
+                                }
 
                             }
 
-                            , me.selectError);
-
-
-
+                            , function (tx, error) {
+                                loadMask.hide();
+                                Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                            });
 
                     }
 
-                    , me.selectError)
+                    , function (tx, error) {
+                        loadMask.hide();
+                        Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                    })
             }
-            , function (err) {
-                alert(err.message);
+            , function (error) {
+                loadMask.hide();
+                Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
             });
 
 
@@ -255,7 +323,14 @@
             , idForm = this.formModel.get('idForm').trim()
             , elementsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.element') })
             , optionsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })
+            , loadMask = new Ext.LoadMask({ message: 'Obteniendo los datos del formulario...' })
         ;
+
+        me.getView().add(loadMask);
+        loadMask.show();
+
+        if (!forms.globals.DBManagger.connection)
+            forms.globals.DBManagger.connection = window.openDatabase("forms", "1.0", "forms DB", DB_SIZE);
 
         forms.globals.DBManagger.connection.transaction(
             function (tx) {
@@ -263,34 +338,37 @@
 
                 tx.executeSql(sqlCount, [idForm],
                     function (tx, result) {
-                        me.totalRecords = result.rows[0].totalRecords;
+                        var subQuery = ' SELECT idFormElemento AS id ' +
+                        '				, elemento ' +
+                        '				, descripcion ' +
+                        '				, orden ' +
+                        '				, requerido ' +
+                        '				, minimo ' +
+                        '			FROM	formsElementos  ' +
+                        '	WHERE idForm = ? AND orden > ? AND orden <= ? '
 
-                        var sql = 'WITH myCTE AS ( ' +
-                                    '			SELECT idFormElemento AS id ' +
-                                    '				, elemento ' +
-                                    
-                                    '				, descripcion ' +
-                                    '				, orden ' +
-                                    '				, requerido ' +
-                                    '				, minimo ' +
-                                    '			FROM	formsElementos  ' +
-                                    '	WHERE idForm = ? AND orden > ? AND orden <= ? ' +
-                                    ') ' +
-                                    '	SELECT id, elemento, 0 AS pid, 0 AS gpid, descripcion, orden, requerido, minimo, 0 AS nivel FROM myCTE' +
+                        
+                        me.totalRecords = result.rows.item(0).totalRecords;
+
+                        var sql =   '	SELECT id, elemento, 0 AS pid, 0 AS gpid, descripcion, orden, requerido, minimo, 0 AS nivel FROM ( ' + subQuery + ') AS myCTE' +
                                     '	UNION ALL ' +
                                     '	SELECT idFelementoOpcion As id, 0 AS elemento, idformElemento AS pid, 0 AS gpid, felementosOpciones.descripcion, felementosOpciones.orden, "N" AS requerido, 0 as minimo, 1 AS nivel FROM felementosOpciones' +
-                                    '	INNER JOIN myCTE ON felementosOpciones.idformElemento = myCTE.id ' 
+                                    '	INNER JOIN ('  + subQuery + ') AS myCTE ON felementosOpciones.idformElemento = myCTE.id ' 
                                     
 
-                        tx.executeSql(sql, [idForm, me.start, me.start + me.limit]
+
+                        tx.executeSql(sql, [idForm, me.start, me.start + me.limit, idForm, me.start, me.start + me.limit]
                             , function (tx, records) {
-                                var model = null;
-                                var DBModel = null;
-                                var localModel = null;
 
-                                Ext.Array.each(records.rows, function (record, index) {
+                                var model = null
+                                    , index = 0
+                                    , record = null
+                                    , maxRecords = records.rows.length;
+
+                                for (index = 0; index < maxRecords; index++) {
+                                    record = records.rows.item(index);
+                                
                                     switch (record.nivel) {
-
                                         case 0:
                                             model = Ext.create('forms.model.element', { idFormElemento: record.id, descripcion: record.descripcion, elemento: record.elemento, requerido: record.requerido, minimo: record.minimo, orden: record.orden, page: me.page });
                                             elementsStore.add(model);
@@ -300,17 +378,14 @@
                                             model = Ext.create('forms.model.option', { idFelementoOpcion: record.id, descripcion: record.descripcion, idFormElemento: record.pid, orden: record.orden, action: '', fecha:null });
                                             optionsStore.add(model);
                                             break;
-
-                                       
                                     }
 
-                                });
+                                }
 
                                 // Cachear los nuevos elementos y sus opciones correspondientes
                                 me.elements.loadData(elementsStore.getRange(0, elementsStore.count()), true);
                                 me.options.loadData(optionsStore.getRange(0, optionsStore.count()), true);
 
-                                
 
                                 // -- Elementos Requeridos, estos solo deben enviarse una vez al cliente
                                 sql = "SELECT    trim(formsElementosTable.idFormElemento) AS idFormElemento " +
@@ -346,30 +421,47 @@
 
                                     tx.executeSql(sql, ['-1', idForm]
                                         , function (tx, records) {
-                                            var model = null;
+                                            var index = 0
+                                            , record = null
+                                            , maxRecords = records.rows.length;
 
-                                            me.allElements.loadData(records.rows);
+                                            for (index = 0; index < maxRecords; index++) {
+                                                record = records.rows.item(index);
+                                                me.allElements.add(Ext.create('forms.model.requiredElement', { idFormElemento: record.idFormElemento, numRespuestas: record.numRespuestas, elemento: record.elemento, requerido: record.requerido, respuestaValida: record.respuestaValida, orden: record.orden, minimo: record.minimo }));
+                                            }
+
+                                            loadMask.hide();
 
                                             me.renderControls(elementsStore, optionsStore);
                                         }
 
-                                        , me.selectError);
+                                        , function (tx, error) {
+                                            loadMask.hide();
+                                            Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                                        });
 
-                                } else
+                                } else {
+                                    loadMask.hide();
                                     me.renderControls(elementsStore, optionsStore);
-
-
+                                }
 
                             }
 
-                            , me.selectError);
+                            , function (tx, error) {
+                                loadMask.hide();
+                                Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                            });
 
                     }
 
-                    , me.selectError)
+                    , function (tx, error) {
+                        loadMask.hide();
+                        Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                    })
             }
-            , function (err) {
-                alert(err.message);
+            , function (error) {
+                loadMask.hide();
+                Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
             });
 
 
@@ -384,7 +476,11 @@
         var me = this
             , elementsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.element') })
             , optionsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })
+            , loadMask = new Ext.LoadMask({ message: 'Obteniendo datos de formulario...' })
         ;
+
+        me.getView().add(loadMask);
+        loadMask.show();
 
         // Filtrar unicamente los elementos que pertenecen a la página
         var elementsFilter = new Ext.util.Filter({
@@ -416,9 +512,10 @@
         me.elements.clearFilter();
         me.options.clearFilter();
 
+
+        loadMask.hide();
         // Dibujar los controles en el formulario
         me.renderControls(elementsStore, optionsStore);
-
     }
 
     /**
@@ -427,23 +524,23 @@
     * @param {Ext.data.Store} optionsStore Contiene la lista de respuestas de cada pregunta de elementsStore.
     */
     , renderControls: function (elementsStore, optionsStore, disabled) {
-        var NEW = 'N'
-            , DELETE = 'D'
-            , ACTIVE = '';
-
+        
         var me = this
             , WIDTH_FACTOR = 1.1
             , MARGIN = 20
             , tm = new Ext.util.TextMetrics
             , type = null
-            , formPanel = this.getView()
+            , formPanel = this.getView().lookupReference('cntControls')
             , defaultName = ''
             , currControl = null
             , elemento = null
             , options = []
             , disabled = (me.formUserModel !== null ? me.formUserModel.get('estatus') == 'F' : false)
+            , loadMask = new Ext.LoadMask({ message: 'Preparando los elementos del formulario...' })
         ;
 
+        me.getView().add(loadMask);
+        loadMask.show();
         // Recorrer los elementos del formulario
         elementsStore.each(function (element, index) {
             elemento = element.get('elemento');
@@ -504,7 +601,7 @@
                     });
                 } else if (elemento == forms.utils.common.CONTROL_CODES.SELECT) {
                     options.push({ text: option.get('descripcion'), value: option.get('idFelementoOpcion') });
-                } else
+                } else {
                     elementControl = Ext.create({
                         xtype: type
                         , name: defaultName
@@ -512,6 +609,8 @@
                         , reference: defaultName
                         , disabled: disabled
                     });
+
+                }
 
                 elementControl.setLabel(option.get('descripcion'));
 
@@ -537,24 +636,26 @@
             // Asignar los valores de respuesta a las opciones del elemento
             me.localOptions.each(function (option, index) {
 
-                //if (option.get('action') !== DELETE) {
-                    defaultName = type + option.get('idFelementoOpcion');
+                defaultName = type + option.get('idFelementoOpcion');
 
-                    currControl = me.lookupReference(defaultName)
+                currControl = me.lookupReference(defaultName)
 
-                    if (type == 'radiofield' || type == 'checkboxfield')
-                        currControl.setChecked(true);
-                    else if (type == 'selectfield')
-                        elementControl.setValue(option.get('idFelementoOpcion'));
-                    else if (type == 'datepickerfield')
-                        currControl.setValue(option.get('fecha'));
-                    else
-                        currControl.setValue(option.get('descripcion'));
-                //}
+                if (type == 'radiofield' || type == 'checkboxfield') {
+                    currControl.setChecked(true);
+                }
+                else if (type == 'selectfield')
+                    elementControl.setValue(option.get('idFelementoOpcion'));
+                else if (type == 'datepickerfield')
+                    currControl.setValue(option.get('fecha'));
+                else
+                    currControl.setValue(option.get('descripcion'));
             });
 
             // Remover el filtro
             me.localOptions.clearFilter();
+
+
+            loadMask.hide();
         });
 
     }
@@ -573,12 +674,6 @@
 
 
     , updateData: function () {
-        var NEW = 'N'
-            , DELETE = 'D'
-            , ACTIVE = ''
-            , UPDATE = 'U'
-        ;
-
         var me = this
             , elementsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.element') })
             , currControl = null
@@ -587,7 +682,11 @@
             , currOption = null
             , DBOption = null
             , option = null
+            , loadMask = new Ext.LoadMask({ message: 'Actualizando datos...' })
         ;
+
+        me.getView().add(loadMask);
+        loadMask.show();
 
         // Cargar únicamente los elementos renderizados en el form
         elementsStore.loadData(me.elements.getRange(me.start, (me.start + me.limit) - 1));
@@ -704,7 +803,7 @@
         });
 
 
-        //return optionsData;
+        loadMask.hide();
 
     }
 
@@ -760,7 +859,6 @@
 
                 if (elementosContestados >= (me.formModel !== null ? me.formModel.get('minimo') : me.formUserModel.get('minimo'))) {
                     valido = true;
-                    //return valido;
                 }
             }
 
@@ -786,7 +884,6 @@
             }
 
         });
-
 
         return invalidElements;
     }
@@ -836,15 +933,6 @@
         return validationElements;
     }
 
-
-
-    , selectError: function (tx, error) {
-        alert(error.message);
-    }
-
-    
-
-    
     , localDataToDBData: function(){
         
         var me = this;
@@ -963,53 +1051,91 @@
     }
 
     , saveNewForm: function () {
-        var me = this;
+        var me = this
+        , loadMask = new Ext.LoadMask({ message: 'Obteniendo datos del GPS...' })
+        ;
 
-        navigator.geolocation.getCurrentPosition(function (position) {
-            
-            var cm = forms.utils.common.coockiesManagement();
-            var idFormUsuario = forms.utils.common.guid();
-            var values = [idFormUsuario, me.formModel.get('idForm'), cm.get('idUsuario'), 'C', forms.utils.common.dateToUnixTime(new Date()), position.coords.latitude, position.coords.longitude];
-            
-            sql = "INSERT INTO bformsUsuarios( idFormUsuario, idForm, idUsuario, estatus, fecha, latitud, longitud ) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        // La verificacion de la configuración del GPS solo corre sobre Android y no se puede emular en web
+        if (forms.getApplication().MODE == forms.getApplication().RUN_MODES.PRODUCTION) {
+            me.getView().add(loadMask);
+            loadMask.show();
 
+            cordova.plugins.diagnostic.isGpsLocationEnabled(function (enabled) {
 
-            forms.globals.DBManagger.connection.transaction(
-                    function (tx) {
-                        tx.executeSql(sql, values
-                             , function (tx, result) {
-
-                                 me.localSave(idFormUsuario);
-
-                             }
-
-                            , function (tx, error) {
-                                alert(error.message);
-                            });
-
+                if (enabled) {
+                    navigator.geolocation.getCurrentPosition(function (position) {
+                        loadMask.hide();
+                        me.initSave(position.coords.latitude, position.coords.longitude);
                     }
+                    , function (error) {
+                        loadMask.hide();
+                        Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                    }
+                    , {
+                        enableHighAccuracy: true
+                        , maxAge: 30000
+                        , timeout: 60000
+                    });
+                } else {
+                    loadMask.hide();
 
-                , function (tx, error) {
-                    alert(error.message);
-                });
+                    Ext.Msg.confirm("Guardar formulario", "Es necesario tener activo el GPS del dispositivo para realizar esta acción. <br> ¿Desea activarlo ahora?"
+                    , function (response, eOpts, msg) {
+                        if ('yes' == response) {
+                            cordova.plugins.diagnostic.switchToLocationSettings();
+                        }
+                    });
+                }
+            }, function (error) {
+                loadMask.hide();
+                Ext.Msg.alert('Formularios', "Ocurrió el siguiente error al intentar accesar a la configuración del GPS: " + error, Ext.emptyFn);
+            });
 
 
+        } else
+            me.initSave(0, 0);
 
-        }
-        ,
-        function (error) {
-            alert(' código: ' + error.code + '\n' + ' mensaje: ' + error.message + '\n');
-        });
 
     }
 
-    , localSave: function (idFormUsuario) {
+
+    , initSave: function (latitud, longitud) {
+        var me = this;
+        var cm = forms.utils.common.coockiesManagement();
+        var idFormUsuario = forms.utils.common.guid();
+        var values = [idFormUsuario, me.formModel.get('idForm'), cm.get('idUsuario'), 'C', forms.utils.common.dateToUnixTime(new Date()), latitud, longitud];
+
+        sql = "INSERT INTO bformsUsuarios( idFormUsuario, idForm, idUsuario, estatus, fecha, latitud, longitud ) VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+
+        forms.globals.DBManagger.connection.transaction(
+                function (tx) {
+                    tx.executeSql(sql, values
+                         , function (tx, result) {
+                             me.localSave(idFormUsuario);
+                         }
+
+                        , function (tx, error) {
+                            Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                        });
+
+                }
+
+            , function (tx, error) {
+                Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+            });
+
+    }
+
+    , localSave: function (idFormUsuario, textMessage) {
 
         var me = this
             , data = me.colectData(false)
             , sql = ''
-            , loadMask = new Ext.LoadMask({ message: 'Guardado local...' })
-            , idFormUsuario = (idFormUsuario || null);
+            , loadMask = new Ext.LoadMask({ message: 'Guardando los datos localmente...' })
+            , idFormUsuario = (idFormUsuario || null)
+            , textMessage = (textMessage || null)
+        ;
 
         me.getView().add(loadMask);
 
@@ -1036,7 +1162,8 @@
                     break;
 
                 case 'N':
-                    insertArguments.push('(?, ?, ?, ?, ?)');
+                    // Se cambio la forma de hacer insert multiple de INSERT INTO Tabla () VALUES(), () ... () a usar subcounsulta ya que KitKat con SQlite Plugin no soportan esa funcionalidad
+                    insertArguments.push('SELECT ? AS idElementData, ? AS idFelementoOpcion, ? AS idFormUsuario, ? AS descripcion, ? AS fecha');
                     
                     insertValues.push(forms.utils.common.guid());
                     insertValues.push(row[0].trim());
@@ -1063,9 +1190,17 @@
         if (updateArguments.length > 0) {
             sql = updateArguments.join(' UNION ALL ');
 
-            sql = 'WITH myCTE AS ( ' + sql + ') ' +
-                                    'UPDATE elementsData SET  descripcion = (SELECT descripcion FROM myCTE WHERE myCTE.idElementData = elementsData.idElementData )' +
-                                    ', fecha = (SELECT fecha FROM myCTE WHERE myCTE.idElementData = elementsData.idElementData )'
+            // Aparentemente Android KitKat no soporta la funcionalidad de CTE del plugin SQLite, por eso se cambian las sentencias que las utilizan a subconsultas
+
+            //sql = 'WITH myCTE AS ( ' + sql + ') ' +
+            //                        'UPDATE elementsData SET  descripcion = (SELECT descripcion FROM myCTE WHERE myCTE.idElementData = elementsData.idElementData )' +
+            //                        ', fecha = (SELECT fecha FROM myCTE WHERE myCTE.idElementData = elementsData.idElementData )'
+
+            //sql = 'UPDATE elementsData SET  descripcion = (SELECT descripcion FROM (' + sql + ') AS myCTE WHERE myCTE.idElementData = elementsData.idElementData )' +
+            //                        ', fecha = (SELECT fecha FROM (' + sql + ') AS myCTE WHERE myCTE.idElementData = elementsData.idElementData )'
+
+
+            sql = 'UPDATE elementsData SET  descripcion = (SELECT descripcion FROM (' + sql + ') AS myCTE WHERE myCTE.idElementData = elementsData.idElementData )';
                              
         } else {
             // Si no hay, se crea una consulta para obligar a execute a ejecutar el bloque
@@ -1076,67 +1211,99 @@
 
         forms.globals.DBManagger.connection.transaction(
                     function (tx) {
+                        // Actualizar la descripcion
                         tx.executeSql(sql, updateValues
                              , function (tx, result) {
 
-                                 if (insertArguments.length > 0) {
-                                     sql = 'INSERT INTO elementsData (idElementData, idFelementoOpcion, idFormUsuario, descripcion, fecha) VALUES' + insertArguments.join(',');
+
+                                 // Verificar si hay registros para actualizar
+                                 if (updateArguments.length > 0) {
+                                     sql = 'UPDATE elementsData SET fecha = (SELECT fecha FROM (' + updateArguments.join(' UNION ALL ') + ') AS myCTE WHERE myCTE.idElementData = elementsData.idElementData )';
                                  } else {
                                      // Si no hay, se crea una consulta para obligar a execute a ejecutar el bloque
                                      sql = 'SELECT ? AS exec;'
-                                     insertValues.push(0);
+                                     updateValues = [];
+                                     updateValues.push(0);
                                  }
 
 
+                                 // Actualizar la fecha
+                                 tx.executeSql(sql, updateValues
+                                        , function (tx, result) {
 
-                                 tx.executeSql(sql, insertValues
-                                     , function (tx, result) {
-
-                                         if (deleteArguments.length > 0) {
-                                             sql = 'WITH myCTE AS ( ' + deleteArguments.join(' UNION ALL ') + ') ' +
-                                              'DELETE FROM elementsData WHERE idElementData = ( SELECT idElementData FROM myCTE WHERE idElementData = elementsData.idElementData) ';
-                                         } else {
-                                             // Si no hay, se crea una consulta para obligar a execute a ejecutar el bloque
-                                             sql = 'SELECT ? AS exec;'
-                                             deleteValues.push(0);
-                                         }
+                                            if (insertArguments.length > 0) {
+                                                sql = 'INSERT INTO elementsData (idElementData, idFelementoOpcion, idFormUsuario, descripcion, fecha) SELECT idElementData, idFelementoOpcion, idFormUsuario, descripcion, fecha FROM (' + insertArguments.join(' UNION ALL ') + ')';
+                                            } else {
+                                                // Si no hay, se crea una consulta para obligar a execute a ejecutar el bloque
+                                                sql = 'SELECT ? AS exec;'
+                                                insertValues.push(0);
+                                            }
 
 
-                                         tx.executeSql(sql, deleteValues
-                                             , function (tx, result) {
 
-                                                 me.getView().getParent().down('formsApplied').getController().getList();
-                                                 me.getView().destroy();
+                                            tx.executeSql(sql, insertValues
+                                                , function (tx, result) {
 
-                                                 Ext.Msg.alert('Formularios', 'El formulario se guardó correctamente', Ext.emptyFn);
-                                             }
+                                                    if (deleteArguments.length > 0) {
+                                                        sql = 'DELETE FROM elementsData WHERE idElementData = ( SELECT idElementData FROM (' + deleteArguments.join(' UNION ALL ') + ') AS myCTE WHERE idElementData = elementsData.idElementData) ';
+                                                    } else {
+                                                        // Si no hay, se crea una consulta para obligar a execute a ejecutar el bloque
+                                                        sql = 'SELECT ? AS exec;'
+                                                        deleteValues.push(0);
+                                                    }
 
-                                            , function (tx, error) {
-                                                alert(error.message);
-                                            });
 
-                                     }
+                                                    tx.executeSql(sql, deleteValues
+                                                        , function (tx, result) {
+
+                                                            loadMask.hide();
+
+                                                            me.getView().getParent().down('formsApplied').getController().getList();
+                                                            me.getView().destroy();
+
+                                                            if (textMessage == null)
+                                                                Ext.Msg.alert('Formularios', 'El formulario se guardó correctamente', Ext.emptyFn);
+                                                            else
+                                                                Ext.Msg.alert('Formularios', textMessage, Ext.emptyFn);
+                                                        }
+
+                                                       , function (tx, error) {
+                                                           loadMask.hide();
+                                                           Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                                                       });
+
+                                                }
+
+                                               , function (tx, error) {
+                                                   loadMask.hide();
+                                                   Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                                               });
+
+                                        }
 
                                     , function (tx, error) {
-                                        alert(error.message);
+                                        loadMask.hide();
+                                        Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
                                     });
 
 
                              }
 
                             , function (tx, error) {
-                                alert(error.message);
+                                loadMask.hide();
+                                Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
                             });
 
                     }
 
                 , function (tx, error) {
-                    alert(error.message);
+                    loadMask.hide();
+                    Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
                 });
 
         // TERMINA EL PROCESO DE GUARDADO
 
-        loadMask.hide();
+        
     }
 
     , save: function () {
@@ -1154,7 +1321,7 @@
                     else if (me.formUserModel !== null)
                         me.localSave();
                     else
-                        alert('No se ha podido iniciar el proceso de guardado.');
+                        Ext.Msg.alert('Formularios', 'No se ha podido iniciar el proceso de guardado.', Ext.emptyFn);
 
                 }
             });
@@ -1166,8 +1333,13 @@
            , idFormUsuario = ( this.formUserModel !== null ? this.formUserModel.get('idFormUsuario').trim() : '-1')
             , savedData = []
             , unsavedData = me.colectData(true)
-            , idForm = (me.formUserModel !== null ? me.formUserModel.get('idForm') : me.formModel.get('idForm'));
+            , idForm = (me.formUserModel !== null ? me.formUserModel.get('idForm') : me.formModel.get('idForm'))
+            , loadMask = new Ext.LoadMask({ message: 'Finalizando el formulario...' })
         ;
+
+        me.getView().add(loadMask);
+
+        loadMask.show();
         // Obtener los datos locales
         forms.globals.DBManagger.connection.transaction(
             function (tx) {
@@ -1176,15 +1348,22 @@
                                 'WHERE idFormUsuario = ? ; '
 
                 tx.executeSql(sql, [idFormUsuario],
-                    function (tx, result) {
-                        Ext.Object.each(result.rows, function (index, option) {
+                    function (tx, records) {
+
+                        var index = 0
+                            , record = null
+                            , maxRecords = records.rows.length;
+
+                        // IMPORTANTE: Cambiar esto por un for
+                        for (index = 0; index < maxRecords; index++){
+                            record = records.rows.item(index);
 
                             savedData.push([
-                                option.idFelementoOpcion
-                                , option.descripcion
-                                , forms.utils.common.serialize(forms.utils.common.unixTimeToDate(option.fecha))
+                                record.idFelementoOpcion
+                                , record.descripcion
+                                , forms.utils.common.serialize(forms.utils.common.unixTimeToDate(record.fecha))
                             ]);
-                        });
+                        }
 
 
                         var exist = false;
@@ -1235,72 +1414,51 @@
                         
 
                         if (me.formModel !== null) {
-                            
-
-                            navigator.geolocation.getCurrentPosition(function (position) {
-                                var modelRequest = Ext.create('forms.model.model', { NAME: 'sps_forms_finalizar', idSession: cm.get('idSession'), idForm: idForm, latitud: position.coords.latitude, longitud: position.coords.longitude, datos: savedData })
-                               
-                                forms.utils.common.request(
-                                    modelRequest.getData()
-                                    , function (response, opts) {
-
-                                        var data = JSON.parse((response.responseText == '' ? "{}" : response.responseText));
-
-                                        if (data.type !== 'EXCEPTION') {
-                                            // Refrescar el listado de la vista principal
 
 
-                                            var idFormUsuario = forms.utils.common.guid();
-                                            var values = [idFormUsuario, idForm, cm.get('idUsuario'), 'F', forms.utils.common.dateToUnixTime(new Date()), forms.utils.common.dateToUnixTime(new Date()), position.coords.latitude, position.coords.longitude];
+                            // La verificacion de la configuración del GPS solo corre sobre Android y no se puede emular en web
+                            if (forms.getApplication().MODE == forms.getApplication().RUN_MODES.PRODUCTION) {
 
-                                            sql = "INSERT INTO bformsUsuarios( idFormUsuario, idForm, idUsuario, estatus, fecha, fechaFinalizacion, latitud, longitud ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                                cordova.plugins.diagnostic.isGpsLocationEnabled(function (enabled) {
 
-
-                                            forms.globals.DBManagger.connection.transaction(
-                                                    function (tx) {
-                                                        tx.executeSql(sql, values
-                                                             , function (tx, result) {
-
-                                                                 Ext.Msg.alert('Forms', 'La finalización del formulario se realizó con exito.', Ext.emptyFn);
-
-                                                                 me.getView().getParent().down('formsApplied').getController().getList();
-
-                                                                 // Cerrar la vista de detalle
-                                                                 me.getView().destroy();
-
-                                                             }
-
-                                                            , function (tx, error) {
-                                                                alert(error.message);
-                                                            });
-
-                                                    }
-
-                                                , function (tx, error) {
-                                                    alert(error.message);
-                                                });
-
+                                    if (enabled) {
+                                        navigator.geolocation.getCurrentPosition(function (position) {
+                                            loadMask.hide();
+                                            me.saveAndFinalize(idForm, savedData, position.coords.latitude, position.coords.longitude);
+                                        }
+                                        , function (error) {
+                                            loadMask.hide();
+                                            Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
 
                                         }
+                                        , {
+                                            enableHighAccuracy: true
+                                            , maxAge: 30000
+                                            , timeout: 60000
+                                        });
+                                    } else {
+                                        loadMask.hide();
 
-                                        else
-                                            Ext.Msg.alert('Error al realizar la solicitud', data.mensajeUsuario, Ext.emptyFn);
-
-
+                                        Ext.Msg.confirm("Descargar formulario", "Es necesario tener activo el GPS del dispositivo para realizar esta acción. <br> ¿Desea activarlo ahora?"
+                                        , function (response, eOpts, msg) {
+                                            if ('yes' == response) {
+                                                cordova.plugins.diagnostic.switchToLocationSettings();
+                                            }
+                                        });
                                     }
-                                    , function (response, opts) {
-                                        alert("Error no esperado");
-                                    });
 
 
+                                }, function (error) {
+                                    loadMask.hide();
+                                    Ext.Msg.alert('Formularios', "Ocurrió el siguiente error al intentar accesar a la configuración del GPS: " + error, Ext.emptyFn);
+                                    
+                                });
 
-                            }
-                            , function (error) {
-                                alert(' código: ' + error.code + '\n' + ' mensaje: ' + error.message + '\n');
+                            } else
+                                me.saveAndFinalize(idForm, savedData, 0, 0);
 
-                                latitud = null;
-                                longitud = null;
-                            });
+                        
+
 
                         } else {
                             var modelRequest = Ext.create('forms.model.model', { NAME: 'sps_forms_finalizar', idSession: cm.get('idSession'), idForm: idForm, latitud: me.formUserModel.get('latitud'), longitud: me.formUserModel.get('longitud'), datos: savedData })
@@ -1319,50 +1477,127 @@
                                                 function (tx) {
                                                     var sql = "UPDATE bformsUsuarios SET estatus = ?, fechaFinalizacion = ? WHERE idFormUsuario = ? ;";
 
-                                                    tx.executeSql(sql, ['F', forms.utils.common.dateToUnixTime( new Date() ) , idFormUsuario],
+                                                    tx.executeSql(sql, ['F', forms.utils.common.dateToUnixTime(new Date()), idFormUsuario],
                                                         function (tx, result) {
+                                                            loadMask.hide();
 
-                                                            Ext.Msg.alert('Forms', 'La finalización del formulario se realizo con exito.', Ext.emptyFn);
 
-                                                            me.getView().getParent().down('formsApplied').getController().getList();
+                                                            // Si al momento de finalizar se hizo un cambio en los datos que estaban guardados, este cambio tambien debe reflejarse en la DB local
+                                                            me.localSave(null, 'La finalización del formulario se realizo con exito.');
 
-                                                            // Cerrar la vista de detalle
-                                                            me.getView().destroy();
+
+                                                            //Ext.Msg.alert('Forms', 'La finalización del formulario se realizo con exito.', Ext.emptyFn);
+
+                                                            //me.getView().getParent().down('formsApplied').getController().getList();
+
+                                                            //// Cerrar la vista de detalle
+                                                            //me.getView().destroy();
 
                                                         }
 
-                                                        , me.selectError)
+                                                        , function (tx, error) {
+                                                            loadMask.hide();
+                                                            Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                                                        })
                                                 }
-                                                , function (err) {
-                                                    alert(err.message);
+                                                , function (error) {
+                                                    loadMask.hide();
+                                                    Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
                                                 });
 
 
-                                        }
-
-                                        else
+                                        } else {
+                                            loadMask.hide();
                                             Ext.Msg.alert('Error al realizar la solicitud', data.mensajeUsuario, Ext.emptyFn);
+                                        }
 
 
                                     }
                                     , function (response, opts) {
-                                        alert("Error no esperado");
+                                        loadMask.hide();
+                                        Ext.Msg.alert('Formularios', "Error no esperado", Ext.emptyFn);
                                     });
-
-
 
                         }
 
 
                     }
 
-                    , me.selectError)
+                    , function (tx, error) {
+                        loadMask.hide();
+                        Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                    })
             }
-            , function (err) {
-                alert(err.message);
+            , function (error) {
+                loadMask.hide();
+                Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
             });
 
     }
+
+
+    , saveAndFinalize: function (idForm, savedData, latitud, longitud) {
+        var me = this
+            , cm = forms.utils.common.coockiesManagement()
+            , modelRequest = Ext.create('forms.model.model', { NAME: 'sps_forms_finalizar', idSession: cm.get('idSession'), idForm: idForm, latitud: latitud, longitud: longitud, datos: savedData })
+            , loadMask = new Ext.LoadMask({ message: 'Guardando y finalizando el formulario...' });
+
+        me.getView().add(loadMask);
+
+        loadMask.show();
+
+        forms.utils.common.request(
+            modelRequest.getData()
+            , function (response, opts) {
+
+                var data = JSON.parse((response.responseText == '' ? "{}" : response.responseText));
+
+                if (data.type !== 'EXCEPTION') {
+                    // Refrescar el listado de la vista principal
+
+
+                    var idFormUsuario = forms.utils.common.guid();
+                    var values = [idFormUsuario, idForm, cm.get('idUsuario'), 'F', forms.utils.common.dateToUnixTime(new Date()), forms.utils.common.dateToUnixTime(new Date()), latitud, longitud];
+
+                    sql = "INSERT INTO bformsUsuarios( idFormUsuario, idForm, idUsuario, estatus, fecha, fechaFinalizacion, latitud, longitud ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+
+                    forms.globals.DBManagger.connection.transaction(
+                            function (tx) {
+                                tx.executeSql(sql, values
+                                     , function (tx, result) {
+                                         loadMask.hide();
+
+                                         me.localSave(idFormUsuario, 'La finalización del formulario se realizó con exito.');
+                                     }
+
+                                    , function (tx, error) {
+                                        loadMask.hide();
+                                        Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                                    });
+
+                            }
+
+                        , function (tx, error) {
+                            loadMask.hide();
+                            Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                        });
+
+
+                } else {
+                    loadMask.hide();
+                    Ext.Msg.alert('Error al realizar la solicitud', data.mensajeUsuario, Ext.emptyFn);
+                }
+
+
+            }
+            , function (response, opts) {
+                loadMask.hide();
+                Ext.Msg.alert('Formularios', 'Error no esperado', Ext.emptyFn);
+                
+            });
+    }
+
 
      , finalize: function () {
         var me = this
@@ -1389,8 +1624,7 @@
 
                                     text = text + '</table>'
 
-                                    Ext.Msg.alert('Validación del formulario', 'Las siguientes preguntas son requeridas. <br>' + text, Ext.emptyFn);
-
+                                    Ext.Msg.alert('Validación del formulario', 'Los siguientes elementos son requeridos: <br>' + text, Ext.emptyFn);
 
                                 } else {
 
@@ -1409,21 +1643,20 @@
 
 
                                     } else {
-
-                                        //if (me.isDownload(me.formModel))
                                             me.finalizeFromLocal();
-                                        //else
-                                        //    me.remoteSave(true);
                                     }
                                 }
                             } else {
-                                Ext.Msg.alert('Validación del formulario', 'Es requerido que responda al menos ' + me.formModel.get('minimo') + ' pregunta' + (me.formModel.get('minimo')  > 1 ?  's' : '') + ' del formulario.' , Ext.emptyFn);
+                                var minimo = (me.formModel == null ? me.formUserModel.get('minimo') : me.formModel.get('minimo'));
+
+                                Ext.Msg.alert('Validación del formulario', 'Es requerido que responda al menos ' + minimo + ' pregunta' + (minimo > 1 ? 's' : '') + ' del formulario.', Ext.emptyFn);
 
                             }
 
                         }
                     });
     }
+
 
     , exit: function () {
         this.getView().destroy();
@@ -1433,21 +1666,35 @@
     , close: function () {
         var me = this;
 
-        Ext.Msg.confirm("Cerrar formulario", "La información que no se haya guardado se perderá. ¿Desea continuar?"
-                 , function (response, eOpts, msg) {
-                     if (response == 'yes') {
-                         me.exit();
-                     }
-                 });
+        if (me.formUserModel !== null) {
+
+            if (me.formUserModel.get('estatus') == 'F') {
+                me.exit();
+            } else {
+                Ext.Msg.confirm("Cerrar formulario", "La información que no se haya guardado se perderá. ¿Desea continuar?"
+                          , function (response, eOpts, msg) {
+                              if (response == 'yes') {
+                                  me.exit();
+                              }
+                          });
+            }
+        } else {
+            Ext.Msg.confirm("Cerrar formulario", "La información que no se haya guardado se perderá. ¿Desea continuar?"
+                     , function (response, eOpts, msg) {
+                         if (response == 'yes') {
+                             me.exit();
+                         }
+                     });
+        }
 
     }
 
 
     , closeDB: function() {
         forms.globals.DBManagger.connection.close(function () {
-            //alert("DB closed!");
+            
         }, function (error) {
-            console.log("Error al intentar cerrar la base de datos : " + error.message);
+            Ext.Msg.alert('Formularios', "Error al intentar cerrar la base de datos : " + error.message, Ext.emptyFn);
         });
     }
 

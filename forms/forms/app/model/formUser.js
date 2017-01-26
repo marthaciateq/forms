@@ -47,6 +47,16 @@
             name: 'longitud'
             , type: 'number'
         }
+
+        , {
+            name: 'minimo'
+           , type: 'int'
+        }
+
+        , {
+            name: 'estatus'
+           , type: 'string'
+        }
     ]
 
 });

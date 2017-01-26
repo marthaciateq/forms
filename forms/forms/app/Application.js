@@ -8,6 +8,7 @@ Ext.define('forms.Application', {
 
     , name: 'forms'
     , MODE: null // El modo en el que va a correr la APP (se establece en el método init)
+    , RUN_MODES: null
     , stores: [
         // TODO: add global / shared stores here
     ]
@@ -30,19 +31,20 @@ Ext.define('forms.Application', {
     */
     , init: function (app) {
         var SERVER = 'http://200.33.18.35' // Es la IP del Servidor de DB al que se va a conectar la APP
-            , RUN_MODES = { DEVELOPMENT: /forms/, PRODUCTION: SERVER + '/' } // Los modos en los que puede correr la APP, este objeto se inicializa en el metodo init de la app
-        ;
 
-        /*
-                IMPORTANTE: Cambiar el valor de DEVELOPMENT a PRODUCTION cuando se vaya a compilar la APP
-        */
-        this.MODE = RUN_MODES.PRODUCTION; // El modo en el que va a correr la APP
+        this.RUN_MODES = { DEVELOPMENT: /forms/, PRODUCTION: SERVER + '/' } // Los modos en los que puede correr la APP, este objeto se inicializa en el metodo init de la app
     }
 
     /**
     * Se configura la app y se lanza 
     */
     , launch: function () {
+        /*
+                IMPORTANTE: Cambiar el valor de DEVELOPMENT a PRODUCTION cuando se vaya a compilar la APP
+        */
+        this.MODE = this.RUN_MODES.PRODUCTION; // El modo en el que va a correr la APP
+
+
         // Definir el modo en el que va a correr la APP
         forms.globals = {
             root: this.MODE
