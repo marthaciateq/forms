@@ -25,8 +25,8 @@
 
             // Solicitar al backend el inicio de sesión
             forms.utils.common.request({ "NAME": "spp_autenticar", "login": user, "password": password }
-            , function (responseData, opts) { // Success
-                var response = JSON.parse(responseData.responseText);
+            , function (response, opts) { // Success
+                var response = JSON.parse((response.responseText == '') ? '{}' : response.responseText);
 
 
                 if (response.type !== 'EXCEPTION') {
@@ -76,19 +76,7 @@
                     Ext.Msg.alert('Tiempo de espera terminado', response.statusText, Ext.emptyFn);
                 }
                 else {
-                    //Ext.Object.each(response, function (key, value) {
-
-                    //    if (Ext.isObject(value)) {
-
-                    //        Ext.Object.each(value, function (subKey, subValue) {
-                    //            text += subKey + ':' + subValue + "<br>"
-                    //        });
-
-                    //    }
-
-                    //    text += key + ':' + value + "<br>"
-                    //});
-
+                    
                     loadMask.hide();
 
                     Ext.Msg.alert('Error al intentar realizar la acción', "Verifique que su conexión wifi o el servicio de datos esten activos.", Ext.emptyFn);
@@ -108,5 +96,7 @@
         }
 
     }
+
+ 
 
 });

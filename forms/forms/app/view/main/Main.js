@@ -1,4 +1,4 @@
-﻿/**
+/**
  * This class is the main view for the application. It is specified in app.js as the
  * "mainView" property. That setting causes an instance of this class to be created and
  * added to the Viewport container.
@@ -26,31 +26,7 @@ Ext.define('forms.view.main.Main', {
         initialize: 'getLocalData'
     }
 
-   
-    //, tools: [
-
-    //    {
-    //        itemId: 'close'
-    //        , type: 'close'
-    //        , hidden: false
-    //        , iconCls: 'fa fa-retweet'
-    //        , callback: function (panel) {
-    //            panel.getController().depurate();
-    //        }
-    //    }
-    //    , {
-    //        itemId: 'close'
-    //        , type: 'close'
-    //        , hidden: false
-    //        , callback: function (panel) {
-    //            panel.getController().logout();
-    //        }
-    //    }
-
-                
-        
-    //]
-
+ 
     , items: [
          {
              xtype: 'fieldset',
@@ -86,6 +62,7 @@ Ext.define('forms.view.main.Main', {
                 , items: [
                     {
                         xtype: 'grid'
+                        , layout: 'fit'
                         , reference: 'encuestasGrid'
                         , itemiId: 'encuestasGrid'
                         , emptyText: 'No se encontraron formularios asignados'
@@ -119,8 +96,9 @@ Ext.define('forms.view.main.Main', {
                                 flex: 1
                                 , text: 'Formulario'
                                 , cell: { encodeHtml: false }
+                                ,  dataIndex: 'descripcion'
                                 , renderer: function (value, record, index, cell, column, HTML) {
-                                    return '<div class="left-panel" style="' + (record.get('fCaducidad').getTime() < new Date().getTime() ? "background-color:#F5BCA9;" : "") + '"> <b class="title"> ' + record.get('titulo') + ' </b> <p class="sender"> Envia: ' + (record.get('nombreCompletoCreo') !== undefined ? record.get('nombreCompletoCreo') : '') + ' </p></div> <div class="date-panel" style="' + (record.get('fCaducidad').getTime() < new Date().getTime() ? "background-color:#F5BCA9;" : "") + '"> <span class="date-value">Fecha de expiración</br>' + Ext.Date.format(record.get('fCaducidad'), "d M Y") + '</span> </div>'
+                                    return '<div class="left-panel" style="' + (record.get('fCaducidad').getTime() < new Date().getTime() ? "background-color:#F5BCA9;" : "") + '"> <b class="title"> ' + record.get('titulo') + ' </b> <p class="sender"> Envia: ' + (record.get('nombreCompletoCreo') !== undefined ? record.get('nombreCompletoCreo') : '') + ' </p></div> <div class="date-panel" style="' + (record.get('fCaducidad').getTime() < new Date().getTime() ? "background-color:#F5BCA9;" : "") + '"> <span class="date-value">Expiración</br>' + Ext.Date.format(record.get('fCaducidad'), "d M Y") + '</span> </div>'
 
                                 }
 

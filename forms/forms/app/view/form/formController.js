@@ -1,6 +1,6 @@
-﻿Ext.define('forms.view.form.formController', {
-    extend: 'Ext.app.ViewController',
-    alias: 'controller.form'
+﻿Ext.define("forms.view.form.formController", {
+    extend: "Ext.app.ViewController",
+    alias: "controller.form"
 
     , formModel: null
     , formUserModel: null
@@ -8,11 +8,11 @@
     , start: 0
     , limit: 2
     , totalRecords: 0
-    , elements: Ext.create('forms.store.localStore', { model: Ext.create('forms.model.element') }) // Mantiene en cache los elementos del form
-    , options: Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })  // Mantiene en cache las opciones del elemento
-    , DBOptions: Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })  // Mantiene en cache las respuestas de los elementos (Obtenidas desde la DB remota)
-    , localOptions: Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })  // Mantiene en cache las respuestas de los elementos (Obtenidas desde la DB local)
-    , allElements: Ext.create('forms.store.localStore', { model: Ext.create('forms.model.requiredElement') }) // Mantiene en cache un listado de elementos usados para validar los elementos requeridos
+    , elements: Ext.create("forms.store.localStore", { model: Ext.create("forms.model.element") }) // Mantiene en cache los elementos del form
+    , options: Ext.create("forms.store.localStore", { model: Ext.create("forms.model.option") })  // Mantiene en cache las opciones del elemento
+    , DBOptions: Ext.create("forms.store.localStore", { model: Ext.create("forms.model.option") })  // Mantiene en cache las respuestas de los elementos (Obtenidas desde la DB remota)
+    , localOptions: Ext.create("forms.store.localStore", { model: Ext.create("forms.model.option") })  // Mantiene en cache las respuestas de los elementos (Obtenidas desde la DB local)
+    , allElements: Ext.create("forms.store.localStore", { model: Ext.create("forms.model.requiredElement") }) // Mantiene en cache un listado de elementos usados para validar los elementos requeridos
 
     /**
     * Realiza la acción mover del formulario
@@ -25,16 +25,17 @@
         me.start = (me.page == 1) ? 0 : (me.limit * (me.page - 1));
 
         // Quitar todo el contenido del form
-        me.getView().lookupReference('cntControls').removeAll();
+        me.getView().lookupReference("cntControls").removeAll();
 
         // Detectar si ya hay elementos cacheados de la nueva pagina
-        hasRecords = me.elements.findRecord('page', me.page, 0, false, true, true);
+        hasRecords = me.elements.findRecord("page", me.page, 0, false, true, true);
 
         // Obtener los nuevos elementos y renderizarlos
         if (hasRecords == null)
             me.getDetailsById(me.formModel);
         else
             me.getCacheData(me.page);
+
     }
 
     /**
@@ -54,7 +55,7 @@
 
         // Actualizar la apariencia de los controles
         if (me.page > 1)
-            next.getParent().getItems().getByKey('prev').show();
+            next.getParent().getItems().getByKey("prev").show();
 
         MAX_PAGES = Math.ceil(me.totalRecords / me.limit);
 
@@ -66,8 +67,8 @@
         var me = this
             , MAX_PAGES = 0;
 
-        var prev = me.getView().lookupReference('cmdPrevious');
-        var next = me.getView().lookupReference('cmdNext');
+        var prev = me.getView().lookupReference("cmdPrevious");
+        var next = me.getView().lookupReference("cmdNext");
 
         me.updateData();
 
@@ -83,10 +84,10 @@
 
         MAX_PAGES = Math.ceil(me.totalRecords / me.limit);
 
+
         if (me.page == MAX_PAGES)
             next.hide();
     }
-
   
     /**
     * Realiza la acción: moverse hacia la página anterior del form
@@ -107,18 +108,18 @@
             prev.hide();
 
             if (me.totalRecords > me.start + me.limit)
-                prev.getParent().getItems().getByKey('next').show();
+                prev.getParent().getItems().getByKey("next").show();
 
         } else {
-            prev.getParent().getItems().getByKey('next').show();
+            prev.getParent().getItems().getByKey("next").show();
         }
     }
 
 
     , bPrevious: function () {
         var me = this;
-        var prev = me.getView().lookupReference('cmdPrevious');
-        var next = me.getView().lookupReference('cmdNext');
+        var prev = me.getView().lookupReference("cmdPrevious");
+        var next = me.getView().lookupReference("cmdNext");
         me.updateData();
         
         // Decrementar el indicador de pagina
@@ -154,11 +155,11 @@
         
     , getLocalData: function () {
         var me = this
-            , idForm = this.formUserModel.get('idForm').trim()
-            , idFormUsuario = this.formUserModel.get('idFormUsuario').trim()
-            , elementsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.element') })
-            , optionsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })
-            , loadMask = new Ext.LoadMask({ message: 'Obteniendo datos de formulario...' })
+            , idForm = this.formUserModel.get("idForm").trim()
+            , idFormUsuario = this.formUserModel.get("idFormUsuario").trim()
+            , elementsStore = Ext.create("forms.store.localStore", { model: Ext.create("forms.model.element") })
+            , optionsStore = Ext.create("forms.store.localStore", { model: Ext.create("forms.model.option") })
+            , loadMask = new Ext.LoadMask({ message: "Obteniendo datos de formulario..." })
         ;
 
         me.getView().add(loadMask);
@@ -167,32 +168,35 @@
 
         forms.globals.DBManagger.connection.transaction(
             function (tx) {
-                var sqlCount = 'SELECT COUNT(idFormElemento) AS totalRecords FROM formsElementos WHERE idForm = ?;';
+                var sqlCount = "SELECT COUNT(idFormElemento) AS totalRecords FROM formsElementos WHERE idForm = ?;";
 
                 tx.executeSql(sqlCount, [idForm],
                     function (tx, result) {
                         me.totalRecords = result.rows.item(0).totalRecords;
 
-                        var subQuery = 'SELECT idFormElemento AS id ' +
-                        '				, elemento ' +
-                        '				, descripcion ' +
-                        '				, orden ' +
-                        '				, requerido ' +
-                        '				, minimo ' +
-                        '			FROM	formsElementos  ' +
-                        '	WHERE idForm = ? AND orden > ? AND orden <= ? ';
+                        if (me.totalRecords <= me.limit)
+                            me.getView().down("container[itemId=cntButtons]").getItems().getByKey("cmdNext").hide();
+
+                        var subQuery = "SELECT idFormElemento AS id " +
+                        "               , elemento " +
+                        "               , descripcion " +
+                        "               , orden " +
+                        "               , requerido " +
+                        "               , minimo " +
+                        "            FROM formsElementos  " +
+                        "         WHERE idForm = ? AND orden > ? AND orden <= ? ";
 
 
-                        var sql =  '	SELECT id, elemento, 0 AS pid, 0 AS gpid, descripcion, orden, requerido, minimo, 0 AS nivel FROM (' + subQuery + ') AS myCTE' +
-                                    '	UNION ALL ' +
-                                    '	SELECT idFelementoOpcion As id, 0 AS elemento, idformElemento AS pid, 0 AS gpid, felementosOpciones.descripcion, felementosOpciones.orden, "N" AS requerido, 0 as minimo, 1 AS nivel FROM felementosOpciones' +
-                                    '	INNER JOIN ( ' + subQuery + ' )AS myCTE ON felementosOpciones.idformElemento = myCTE.id ' +
-                                    '   UNION ALL ' +
-                                    '   SELECT idElementData AS id, fecha AS elemento, elementsData.idFelementoOpcion AS pid, idformElemento AS gpid, elementsData.descripcion, 0 AS orden, "N" AS requerido, 0 AS minimo, 2 AS nivel ' +
-                                    '   FROM (' + subQuery + ') AS MyCTE ' +
-                                    '       INNER JOIN felementosOpciones ON myCTE.id = felementosOpciones.idformElemento ' +
-                                    '       INNER JOIN elementsData ON felementosOpciones.idFelementoOpcion = elementsData.idFelementoOpcion ' +
-                                    ' WHERE idFormUsuario = ?'
+                        var sql =  "   SELECT id, elemento, 0 AS pid, 0 AS gpid, descripcion, orden, requerido, minimo, 0 AS nivel FROM (" + subQuery + ") AS myCTE" +
+                                    "   UNION ALL " +
+                                    "   SELECT idFelementoOpcion As id, 0 AS elemento, idformElemento AS pid, 0 AS gpid, felementosOpciones.descripcion, felementosOpciones.orden, 'N' AS requerido, 0 as minimo, 1 AS nivel FROM felementosOpciones" +
+                                    "   INNER JOIN ( " + subQuery + " )AS myCTE ON felementosOpciones.idformElemento = myCTE.id " +
+                                    "   UNION ALL " +
+                                    "   SELECT idElementData AS id, fecha AS elemento, elementsData.idFelementoOpcion AS pid, idformElemento AS gpid, elementsData.descripcion, 0 AS orden, 'N' AS requerido, 0 AS minimo, 2 AS nivel " +
+                                    "   FROM (" + subQuery + ") AS MyCTE " +
+                                    "       INNER JOIN felementosOpciones ON myCTE.id = felementosOpciones.idformElemento " +
+                                    "       INNER JOIN elementsData ON felementosOpciones.idFelementoOpcion = elementsData.idFelementoOpcion " +
+                                    " WHERE idFormUsuario = ?"
 
                         tx.executeSql(sql, [idForm, me.start, me.start + me.limit, idForm, me.start, me.start + me.limit, idForm, me.start, me.start + me.limit, idFormUsuario]
                             , function (tx, records) {
@@ -206,22 +210,21 @@
                                 // IMPORTANTE: Cambiar esto por un for
                                 for (index = 0; index < maxRecords; index++){
                                     record = records.rows.item(index);
-                                //Ext.Array.each(records.rows, function (record, index) {
                                     switch (record.nivel) {
 
                                         case 0:
-                                            model = Ext.create('forms.model.element', { idFormElemento: record.id, descripcion: record.descripcion, elemento: record.elemento, requerido: record.requerido, minimo: record.minimo, orden: record.orden, page: me.page });
+                                            model = Ext.create("forms.model.element", { idFormElemento: record.id, descripcion: record.descripcion, elemento: record.elemento, requerido: record.requerido, minimo: record.minimo, orden: record.orden, page: me.page });
                                             elementsStore.add(model);
                                             break;
 
                                         case 1:
-                                            model = Ext.create('forms.model.option', { idFelementoOpcion: record.id, descripcion: record.descripcion, idFormElemento: record.pid, orden: record.orden, action: '', fecha:null });
+                                            model = Ext.create("forms.model.option", { idFelementoOpcion: record.id, descripcion: record.descripcion, idFormElemento: record.pid, orden: record.orden, action: "", fecha:null });
                                             optionsStore.add(model);
                                             break;
 
                                         case 2:
-                                            DBOption = Ext.create('forms.model.option', {idElementData: record.id, idFelementoOpcion: record.pid, descripcion: record.descripcion, idFormElemento: record.gpid, fecha: forms.utils.common.unixTimeToDate(record.elemento), action: '' });
-                                            localOption = Ext.create('forms.model.option', { idElementData: record.id, idFelementoOpcion: record.pid, descripcion: record.descripcion, idFormElemento: record.gpid, fecha: forms.utils.common.unixTimeToDate(record.elemento), action: '' });
+                                            DBOption = Ext.create("forms.model.option", {idElementData: record.id, idFelementoOpcion: record.pid, descripcion: record.descripcion, idFormElemento: record.gpid, fecha: forms.utils.common.unixTimeToDate(record.elemento), action: "" });
+                                            localOption = Ext.create("forms.model.option", { idElementData: record.id, idFelementoOpcion: record.pid, descripcion: record.descripcion, idFormElemento: record.gpid, fecha: forms.utils.common.unixTimeToDate(record.elemento), action: "" });
                                             me.DBOptions.add(DBOption);
                                             me.localOptions.add(localOption);
                                             break;
@@ -233,34 +236,33 @@
                                 me.elements.loadData(elementsStore.getRange(0, elementsStore.count()), true);
                                 me.options.loadData(optionsStore.getRange(0, optionsStore.count()), true);
 
-                                //////me.renderControls(elementsStore, optionsStore);
 
                                 // -- Elementos Requeridos, estos solo deben enviarse una vez al cliente
                                 sql = "SELECT    trim(formsElementosTable.idFormElemento) AS idFormElemento " +
-                                        "		, COUNT(elementsDataTable.idFelementoOpcion)   AS numRespuestas " +
-                                        "		, MAX(requerido) AS requerido " +
-                                        "		, MAX( " +
-                                        "					CASE WHEN LENGTH( IFNULL(elementsDataTable.descripcion, '') + CASE WHEN elementsDataTable.fecha IS NULL THEN " +
-                                        "																					'' " +
-                                        "																				ELSE " +
-                                        "																					CASE WHEN elementsDataTable.fecha = 'undefined' THEN '' ELSE elementsDataTable.fecha END" +
-                                        "																				END " +
-                                        "									) > 0  THEN " +
-                                        "						1 " +
-                                        "					ELSE " +
-                                        "						0 " +
-                                        "					END " +
-                                        "				) AS respuestaValida " +
-                                        "		, MAX(elementsDataTable.descripcion) AS descripcion " +
-                                        "		, MAX(elementsDataTable.fecha) AS fecha " +
-                                        "		, MAX(formsElementosTable.minimo) AS minimo " +
+                                        "      , COUNT(elementsDataTable.idFelementoOpcion)   AS numRespuestas " +
+                                        "      , MAX(requerido) AS requerido " +
+                                        "      , MAX( " +
+                                        "               CASE WHEN LENGTH( IFNULL(elementsDataTable.descripcion, '') + CASE WHEN elementsDataTable.fecha IS NULL THEN " +
+                                        "                                                               '' " +
+                                        "                                                            ELSE " +
+                                        "                                                               CASE WHEN elementsDataTable.fecha = 'undefined' THEN '' ELSE elementsDataTable.fecha END" +
+                                        "                                                            END " +
+                                        "                           ) > 0  THEN " +
+                                        "                  1 " +
+                                        "               ELSE " +
+                                        "                  0 " +
+                                        "               END " +
+                                        "            ) AS respuestaValida " +
+                                        "      , MAX(elementsDataTable.descripcion) AS descripcion " +
+                                        "      , MAX(elementsDataTable.fecha) AS fecha " +
+                                        "      , MAX(formsElementosTable.minimo) AS minimo " +
                                         "       , MAX(formsElementosTable.orden) AS orden  " +
                                         "       , MAX(formsElementosTable.elemento) AS elemento " +
                                         "FROM formsElementos AS formsElementosTable " +
                                         "   INNER JOIN felementosOpciones ON formsElementosTable.idformElemento = felementosOpciones.idformElemento" +
-                                        "	LEFT JOIN elementsData AS elementsDataTable ON felementosOpciones.idfelementoOpcion = elementsDataTable.idFelementoOpcion AND elementsDataTable.idFormUsuario = ? " +
+                                        "   LEFT JOIN elementsData AS elementsDataTable ON felementosOpciones.idfelementoOpcion = elementsDataTable.idFelementoOpcion AND elementsDataTable.idFormUsuario = ? " +
                                         "WHERE " +
-                                        "	formsElementosTable.idForm = ? " +
+                                        "   formsElementosTable.idForm = ? " +
                                         "GROUP BY formsElementosTable.idFormElemento "
                                         "ORDER BY orden;";
 
@@ -276,7 +278,7 @@
 
                                             for (index = 0; index < maxRecords; index++) {
                                                 record = records.rows.item(index);
-                                                me.allElements.add(Ext.create('forms.model.requiredElement', { idFormElemento: record.idFormElemento, numRespuestas: record.numRespuestas, elemento: record.elemento, requerido: record.requerido, respuestaValida: record.respuestaValida, orden: record.orden, minimo: record.minimo }));
+                                                me.allElements.add(Ext.create("forms.model.requiredElement", { idFormElemento: record.idFormElemento, numRespuestas: record.numRespuestas, elemento: record.elemento, requerido: record.requerido, respuestaValida: record.respuestaValida, orden: record.orden, minimo: record.minimo }));
                                             }
 
                                             loadMask.hide();
@@ -285,7 +287,7 @@
 
                                         , function (tx, error) {
                                             loadMask.hide();
-                                            Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                                            Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
                                         });
 
                                 } else {
@@ -297,19 +299,19 @@
 
                             , function (tx, error) {
                                 loadMask.hide();
-                                Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                                Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
                             });
 
                     }
 
                     , function (tx, error) {
                         loadMask.hide();
-                        Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                        Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
                     })
             }
             , function (error) {
                 loadMask.hide();
-                Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
             });
 
 
@@ -320,40 +322,41 @@
 
     , getFormStructure: function () {
         var me = this
-            , idForm = this.formModel.get('idForm').trim()
-            , elementsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.element') })
-            , optionsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })
-            , loadMask = new Ext.LoadMask({ message: 'Obteniendo los datos del formulario...' })
+            , idForm = this.formModel.get("idForm").trim()
+            , elementsStore = Ext.create("forms.store.localStore", { model: Ext.create("forms.model.element") })
+            , optionsStore = Ext.create("forms.store.localStore", { model: Ext.create("forms.model.option") })
+            , loadMask = new Ext.LoadMask({ message: "Obteniendo los datos del formulario..." })
         ;
 
         me.getView().add(loadMask);
         loadMask.show();
 
-        if (!forms.globals.DBManagger.connection)
-            forms.globals.DBManagger.connection = window.openDatabase("forms", "1.0", "forms DB", DB_SIZE);
-
         forms.globals.DBManagger.connection.transaction(
             function (tx) {
-                var sqlCount = 'SELECT COUNT(idFormElemento) AS totalRecords FROM formsElementos WHERE idForm = ?;';
+                var sqlCount = "SELECT COUNT(idFormElemento) AS totalRecords FROM formsElementos WHERE idForm = ?;";
 
                 tx.executeSql(sqlCount, [idForm],
                     function (tx, result) {
-                        var subQuery = ' SELECT idFormElemento AS id ' +
-                        '				, elemento ' +
-                        '				, descripcion ' +
-                        '				, orden ' +
-                        '				, requerido ' +
-                        '				, minimo ' +
-                        '			FROM	formsElementos  ' +
-                        '	WHERE idForm = ? AND orden > ? AND orden <= ? '
+                        var subQuery = " SELECT idFormElemento AS id " +
+                        "            , elemento " +
+                        "            , descripcion " +
+                        "            , orden " +
+                        "            , requerido " +
+                        "            , minimo " +
+                        "         FROM   formsElementos  " +
+                        "   WHERE idForm = ? AND orden > ? AND orden <= ? "
 
                         
                         me.totalRecords = result.rows.item(0).totalRecords;
 
-                        var sql =   '	SELECT id, elemento, 0 AS pid, 0 AS gpid, descripcion, orden, requerido, minimo, 0 AS nivel FROM ( ' + subQuery + ') AS myCTE' +
-                                    '	UNION ALL ' +
-                                    '	SELECT idFelementoOpcion As id, 0 AS elemento, idformElemento AS pid, 0 AS gpid, felementosOpciones.descripcion, felementosOpciones.orden, "N" AS requerido, 0 as minimo, 1 AS nivel FROM felementosOpciones' +
-                                    '	INNER JOIN ('  + subQuery + ') AS myCTE ON felementosOpciones.idformElemento = myCTE.id ' 
+                        if (me.totalRecords <= me.limit)
+                            me.getView().down("container[itemId=cntButtons]").getItems().getByKey("cmdNext").hide();
+
+                        
+                        var sql =   "   SELECT id, elemento, 0 AS pid, 0 AS gpid, descripcion, orden, requerido, minimo, 0 AS nivel FROM ( " + subQuery + ") AS myCTE" +
+                                    "   UNION ALL " +
+                                    "   SELECT idFelementoOpcion As id, 0 AS elemento, idformElemento AS pid, 0 AS gpid, felementosOpciones.descripcion, felementosOpciones.orden, 'N' AS requerido, 0 as minimo, 1 AS nivel FROM felementosOpciones" +
+                                    "   INNER JOIN (" + subQuery + ") AS myCTE ON felementosOpciones.idformElemento = myCTE.id " 
                                     
 
 
@@ -370,12 +373,12 @@
                                 
                                     switch (record.nivel) {
                                         case 0:
-                                            model = Ext.create('forms.model.element', { idFormElemento: record.id, descripcion: record.descripcion, elemento: record.elemento, requerido: record.requerido, minimo: record.minimo, orden: record.orden, page: me.page });
+                                            model = Ext.create("forms.model.element", { idFormElemento: record.id, descripcion: record.descripcion, elemento: record.elemento, requerido: record.requerido, minimo: record.minimo, orden: record.orden, page: me.page });
                                             elementsStore.add(model);
                                             break;
 
                                         case 1:
-                                            model = Ext.create('forms.model.option', { idFelementoOpcion: record.id, descripcion: record.descripcion, idFormElemento: record.pid, orden: record.orden, action: '', fecha:null });
+                                            model = Ext.create("forms.model.option", { idFelementoOpcion: record.id, descripcion: record.descripcion, idFormElemento: record.pid, orden: record.orden, action: "", fecha:null });
                                             optionsStore.add(model);
                                             break;
                                     }
@@ -389,37 +392,37 @@
 
                                 // -- Elementos Requeridos, estos solo deben enviarse una vez al cliente
                                 sql = "SELECT    trim(formsElementosTable.idFormElemento) AS idFormElemento " +
-                                        "		, COUNT(elementsDataTable.idFelementoOpcion)   AS numRespuestas " +
-                                        "		, MAX(requerido) AS requerido " +
-                                        "		, MAX( " +
-                                        "					CASE WHEN LENGTH( IFNULL(elementsDataTable.descripcion, '') + CASE WHEN elementsDataTable.fecha IS NULL THEN " +
-                                        "																					'' " +
-                                        "																				ELSE " +
-                                        "																					CASE WHEN elementsDataTable.fecha = 'undefined' THEN '' ELSE elementsDataTable.fecha END" +
-                                        "																				END " +
-                                        "									) > 0  THEN " +
-                                        "						1 " +
-                                        "					ELSE " +
-                                        "						0 " +
-                                        "					END " +
-                                        "				) AS respuestaValida " +
-                                        "		, MAX(elementsDataTable.descripcion) AS descripcion " +
-                                        "		, MAX(elementsDataTable.fecha) AS fecha " +
-                                        "		, MAX(formsElementosTable.minimo) AS minimo " +
+                                        "      , COUNT(elementsDataTable.idFelementoOpcion)   AS numRespuestas " +
+                                        "      , MAX(requerido) AS requerido " +
+                                        "      , MAX( " +
+                                        "               CASE WHEN LENGTH( IFNULL(elementsDataTable.descripcion, '') + CASE WHEN elementsDataTable.fecha IS NULL THEN " +
+                                        "                                                               '' " +
+                                        "                                                            ELSE " +
+                                        "                                                               CASE WHEN elementsDataTable.fecha = 'undefined' THEN '' ELSE elementsDataTable.fecha END" +
+                                        "                                                            END " +
+                                        "                           ) > 0  THEN " +
+                                        "                  1 " +
+                                        "               ELSE " +
+                                        "                  0 " +
+                                        "               END " +
+                                        "            ) AS respuestaValida " +
+                                        "      , MAX(elementsDataTable.descripcion) AS descripcion " +
+                                        "      , MAX(elementsDataTable.fecha) AS fecha " +
+                                        "      , MAX(formsElementosTable.minimo) AS minimo " +
                                         "       , MAX(formsElementosTable.orden) AS orden  " +
                                         "       , MAX(formsElementosTable.elemento) AS elemento " +
                                         "FROM formsElementos AS formsElementosTable " +
                                         "   INNER JOIN felementosOpciones ON formsElementosTable.idformElemento = felementosOpciones.idformElemento" +
-                                        "	LEFT JOIN elementsData AS elementsDataTable ON felementosOpciones.idfelementoOpcion = elementsDataTable.idFelementoOpcion AND elementsDataTable.idFormUsuario = ? " +
+                                        "   LEFT JOIN elementsData AS elementsDataTable ON felementosOpciones.idfelementoOpcion = elementsDataTable.idFelementoOpcion AND elementsDataTable.idFormUsuario = ? " +
                                         "WHERE " +
-                                        "	formsElementosTable.idForm = ? " +
+                                        "   formsElementosTable.idForm = ? " +
                                         "GROUP BY formsElementosTable.idFormElemento "
                                 "ORDER BY orden;";
 
                                 // Elementos preparados para usarse como validaciones
                                 if (me.start == 0) {
 
-                                    tx.executeSql(sql, ['-1', idForm]
+                                    tx.executeSql(sql, ["-1", idForm]
                                         , function (tx, records) {
                                             var index = 0
                                             , record = null
@@ -427,7 +430,7 @@
 
                                             for (index = 0; index < maxRecords; index++) {
                                                 record = records.rows.item(index);
-                                                me.allElements.add(Ext.create('forms.model.requiredElement', { idFormElemento: record.idFormElemento, numRespuestas: record.numRespuestas, elemento: record.elemento, requerido: record.requerido, respuestaValida: record.respuestaValida, orden: record.orden, minimo: record.minimo }));
+                                                me.allElements.add(Ext.create("forms.model.requiredElement", { idFormElemento: record.idFormElemento, numRespuestas: record.numRespuestas, elemento: record.elemento, requerido: record.requerido, respuestaValida: record.respuestaValida, orden: record.orden, minimo: record.minimo }));
                                             }
 
                                             loadMask.hide();
@@ -437,7 +440,7 @@
 
                                         , function (tx, error) {
                                             loadMask.hide();
-                                            Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                                            Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
                                         });
 
                                 } else {
@@ -449,19 +452,19 @@
 
                             , function (tx, error) {
                                 loadMask.hide();
-                                Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                                Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
                             });
 
                     }
 
                     , function (tx, error) {
                         loadMask.hide();
-                        Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                        Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
                     })
             }
             , function (error) {
                 loadMask.hide();
-                Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
             });
 
 
@@ -474,9 +477,9 @@
     */
     , getCacheData: function () {
         var me = this
-            , elementsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.element') })
-            , optionsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })
-            , loadMask = new Ext.LoadMask({ message: 'Obteniendo datos de formulario...' })
+            , elementsStore = Ext.create("forms.store.localStore", { model: Ext.create("forms.model.element") })
+            , optionsStore = Ext.create("forms.store.localStore", { model: Ext.create("forms.model.option") })
+            , loadMask = new Ext.LoadMask({ message: "Obteniendo datos de formulario..." })
         ;
 
         me.getView().add(loadMask);
@@ -484,8 +487,8 @@
 
         // Filtrar unicamente los elementos que pertenecen a la página
         var elementsFilter = new Ext.util.Filter({
-            id: 'elementsFilter'
-            , property: 'page'
+            id: "elementsFilter"
+            , property: "page"
             , value: me.page
         });
 
@@ -498,9 +501,9 @@
         elementsStore.each(function (element, index) {
             // Filtrar unicamente las opciones que pertenecen al elemento
             var optionsFilter = new Ext.util.Filter({
-                id: 'optionsFilter'
-                , property: 'idFormElemento'
-                , value: element.get('idFormElemento')
+                id: "optionsFilter"
+                , property: "idFormElemento"
+                , value: element.get("idFormElemento")
             });
 
             me.options.addFilter(optionsFilter);
@@ -530,30 +533,30 @@
             , MARGIN = 20
             , tm = new Ext.util.TextMetrics
             , type = null
-            , formPanel = this.getView().lookupReference('cntControls')
-            , defaultName = ''
+            , formPanel = this.getView().lookupReference("cntControls")
+            , defaultName = ""
             , currControl = null
             , elemento = null
             , options = []
-            , disabled = (me.formUserModel !== null ? me.formUserModel.get('estatus') == 'F' : false)
-            , loadMask = new Ext.LoadMask({ message: 'Preparando los elementos del formulario...' })
+            , disabled = (me.formUserModel !== null ? me.formUserModel.get("estatus") == "F" : false)
+            , loadMask = new Ext.LoadMask({ message: "Preparando los elementos del formulario..." })
         ;
 
         me.getView().add(loadMask);
         loadMask.show();
         // Recorrer los elementos del formulario
         elementsStore.each(function (element, index) {
-            elemento = element.get('elemento');
+            elemento = element.get("elemento");
             // Generar un label para cada elemento y mostrar en el la descripcion de la pregunta
-            type = forms.utils.common.getControlByCode(element.get('elemento'));
+            type = forms.utils.common.getControlByCode(element.get("elemento"));
 
-            formPanel.add({ xtype: 'label', name: 'label' + element.get('idFormElemento'), html: element.get('orden') + '.-' + element.get('descripcion') + (element.get('requerido') == 'S' ? '<span style="background:#FF8000;color:#FFF;font-size:8pt;border:1px solid #FFF;margin:3px;padding:1px;">REQ<span>' : '') });
+            formPanel.add({ xtype: "label", name: "label" + element.get("idFormElemento"), html: element.get("orden") + ".-" + element.get("descripcion") + (element.get("requerido") == "S" ? "<span style='background:#FF8000;color:#FFF;font-size:8pt;border:1px solid #FFF;margin:3px;padding:1px;'>REQ<span>" : "") });
 
             // Filtro para obtener unicamente las opciones que pertenecen al elemento
             var optionsFilter = new Ext.util.Filter({
-                id: 'elementsFilter'
-                , property: 'idFormElemento'
-                , value: element.get('idFormElemento')
+                id: "elementsFilter"
+                , property: "idFormElemento"
+                , value: element.get("idFormElemento")
             });
 
             // Aplicar el filtro
@@ -565,54 +568,58 @@
 
                 elementControl = Ext.create({
                     xtype: type
-                    , valueField: 'value'
-                    , displayField: 'text'
+                    , valueField: "value"
+                    , displayField: "text"
                     , name: defaultName
-                    , reference: type + element.get('idFormElemento')
+                    , reference: type + element.get("idFormElemento")
                     , disabled: disabled
                 });
 
-                options.push({ text: 'Seleccione una opción', value: 'NULL' });
+                options.push({ text: "Seleccione una opción", value: "NULL" });
             }
 
             // Generar una a una las opciones del elemento
             optionsStore.each(function (option, index) {
-                defaultName = type + option.get('idFelementoOpcion');
+                defaultName = type + option.get("idFelementoOpcion");
                 
 
                 // Si la opcion se debe mostrar como un control de radio, entonces necesita un tratamiento especial, ya que todos los controles generados deben tener el mismo NAME
                 if (elemento == forms.utils.common.CONTROL_CODES.RADIO) {
                     elementControl = Ext.create({
                         xtype: type
-                        , name: type + element.get('idFormElemento')
-                        , inputValue: option.get('idFelementoOpcion')
-                        , labelWidth: tm.getWidth(option.get('descripcion')) * WIDTH_FACTOR + MARGIN
+                        , name: type + element.get("idFormElemento")
+                        , inputValue: option.get("idFelementoOpcion")
+                        , labelWidth: "70%"
+                        , labelWrap: true
                         , reference: defaultName
                         , disabled: disabled
                     });
+                    elementControl.setLabel(option.get("descripcion"));
                 } else if (elemento == forms.utils.common.CONTROL_CODES.DATE || elemento == forms.utils.common.CONTROL_CODES.TIME) {
                     elementControl = Ext.create({
                         xtype: type
                         , name: defaultName
-                        , dateFormat: 'd/m/Y'
-                        , labelWidth: tm.getWidth(option.get('descripcion')) * WIDTH_FACTOR + MARGIN
+                        , dateFormat: "d/m/Y"
+                        , labelWrap: true
+                        , labelWidth: "70%"
                         , reference: defaultName
                         , disabled: disabled
                     });
                 } else if (elemento == forms.utils.common.CONTROL_CODES.SELECT) {
-                    options.push({ text: option.get('descripcion'), value: option.get('idFelementoOpcion') });
+                    options.push({ text: option.get("descripcion"), value: option.get("idFelementoOpcion") });
                 } else {
                     elementControl = Ext.create({
                         xtype: type
                         , name: defaultName
-                        , labelWidth: tm.getWidth(option.get('descripcion')) * WIDTH_FACTOR + MARGIN
+                        , labelWrap: true
+                        , labelWidth: "70%"
                         , reference: defaultName
                         , disabled: disabled
                     });
-
+                    elementControl.setLabel(option.get("descripcion"));
                 }
 
-                elementControl.setLabel(option.get('descripcion'));
+                
 
 
                 // Agregar el control al form
@@ -630,25 +637,25 @@
 
             me.localOptions.addFilter(optionsFilter);
 
-            if (type == 'selectfield' && me.localOptions.count() == 0)
-                elementControl.setValue('NULL');
+            if (type == "selectfield" && me.localOptions.count() == 0)
+                elementControl.setValue("NULL");
 
             // Asignar los valores de respuesta a las opciones del elemento
             me.localOptions.each(function (option, index) {
 
-                defaultName = type + option.get('idFelementoOpcion');
+                defaultName = type + option.get("idFelementoOpcion");
 
                 currControl = me.lookupReference(defaultName)
 
-                if (type == 'radiofield' || type == 'checkboxfield') {
+                if (type == "radiofield" || type == "checkboxfield") {
                     currControl.setChecked(true);
                 }
-                else if (type == 'selectfield')
-                    elementControl.setValue(option.get('idFelementoOpcion'));
-                else if (type == 'datepickerfield')
-                    currControl.setValue(option.get('fecha'));
+                else if (type == "selectfield")
+                    elementControl.setValue(option.get("idFelementoOpcion"));
+                else if (type == "datepickerfield")
+                    currControl.setValue(option.get("fecha"));
                 else
-                    currControl.setValue(option.get('descripcion'));
+                    currControl.setValue(option.get("descripcion"));
             });
 
             // Remover el filtro
@@ -675,14 +682,14 @@
 
     , updateData: function () {
         var me = this
-            , elementsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.element') })
+            , elementsStore = Ext.create("forms.store.localStore", { model: Ext.create("forms.model.element") })
             , currControl = null
             , type = null
             , optionData = null
             , currOption = null
             , DBOption = null
             , option = null
-            , loadMask = new Ext.LoadMask({ message: 'Actualizando datos...' })
+            , loadMask = new Ext.LoadMask({ message: "Actualizando datos..." })
         ;
 
         me.getView().add(loadMask);
@@ -693,23 +700,23 @@
 
         //
         elementsStore.each(function (element, index) {
-            type = forms.utils.common.getControlByCode(element.get('elemento'));
+            type = forms.utils.common.getControlByCode(element.get("elemento"));
 
             // Filtro para obtener unicamente las opciones que pertenecen al elemento
             var optionsFilter = new Ext.util.Filter({
-                id: 'elementsFilter'
-                , property: 'idFormElemento'
-                , value: element.get('idFormElemento')
+                id: "elementsFilter"
+                , property: "idFormElemento"
+                , value: element.get("idFormElemento")
             });
 
             me.options.addFilter(optionsFilter);
 
 
-            if (element.get('elemento') == forms.utils.common.CONTROL_CODES.CHECK || element.get('elemento') == forms.utils.common.CONTROL_CODES.RADIO ) {
+            if (element.get("elemento") == forms.utils.common.CONTROL_CODES.CHECK || element.get("elemento") == forms.utils.common.CONTROL_CODES.RADIO ) {
                 //// Si se trata de un checkbox, se remueven todas las opciones
                 me.options.each(function (option, index) {
 
-                    optionData = me.localOptions.getById(option.get('idFelementoOpcion'));
+                    optionData = me.localOptions.getById(option.get("idFelementoOpcion"));
 
                     if (optionData)
                         me.localOptions.remove(optionData);
@@ -719,78 +726,78 @@
 
                 //  y se agregan las respuestas nuevas
                 me.options.each(function (option, index) {
-                    currControl = me.lookupReference(type + option.get('idFelementoOpcion'));
+                    currControl = me.lookupReference(type + option.get("idFelementoOpcion"));
 
                     if (currControl.isChecked()) {
-                        me.localOptions.add(Ext.create('forms.model.option', { idFelementoOpcion: option.get('idFelementoOpcion'), idFormElemento: option.get('idFormElemento'), orden: option.get('orden') }));
+                        me.localOptions.add(Ext.create("forms.model.option", { idFelementoOpcion: option.get("idFelementoOpcion"), idFormElemento: option.get("idFormElemento"), orden: option.get("orden") }));
                     }
                 });
-            } else if (element.get('elemento') == forms.utils.common.CONTROL_CODES.SELECT) {
+            } else if (element.get("elemento") == forms.utils.common.CONTROL_CODES.SELECT) {
                 //// Si se trata de un checkbox, se remueven todas las opciones
                 me.options.each(function (option, index) {
-                    optionData = me.localOptions.getById(option.get('idFelementoOpcion'));
+                    optionData = me.localOptions.getById(option.get("idFelementoOpcion"));
 
                     if (optionData)
                         me.localOptions.remove(optionData);
 
                 });
 
-                currControl = me.lookupReference(type + element.get('idFormElemento'));
+                currControl = me.lookupReference(type + element.get("idFormElemento"));
                 option = me.options.getById(currControl.getValue())
 
                 if ( option  )
-                    me.localOptions.add( Ext.create('forms.model.option', { idFelementoOpcion: option.get('idFelementoOpcion'), idFormElemento: option.get('idFormElemento'), orden: option.get('orden') }));
+                    me.localOptions.add( Ext.create("forms.model.option", { idFelementoOpcion: option.get("idFelementoOpcion"), idFormElemento: option.get("idFormElemento"), orden: option.get("orden") }));
 
 
             } else {
                 // Para todos los controles distintos de CHECK u RADIO
                 // Remover el unico option que hay el store para este elemento
 
-                currOption = me.localOptions.getById(me.options.getAt(0).get('idFelementoOpcion'));
+                currOption = me.localOptions.getById(me.options.getAt(0).get("idFelementoOpcion"));
 
                 if (currOption == null || currOption == undefined) {
 
                     currOption = me.options.getAt(0);
 
-                    currOption = Ext.create('forms.model.option', { idFelementoOpcion: currOption.get('idFelementoOpcion'), idFormElemento: element.get('idFormElemento'), orden: currOption.get('orden') });
+                    currOption = Ext.create("forms.model.option", { idFelementoOpcion: currOption.get("idFelementoOpcion"), idFormElemento: element.get("idFormElemento"), orden: currOption.get("orden") });
 
                     me.localOptions.add(currOption);
 
-                    currControl = me.lookupReference(type + currOption.get('idFelementoOpcion'));
+                    currControl = me.lookupReference(type + currOption.get("idFelementoOpcion"));
 
-                    if (type == 'datepickerfield') {
-                        currOption.set('fecha', currControl.getValue());
+                    if (type == "datepickerfield") {
+                        currOption.set("fecha", currControl.getValue());
                     }
                     else {
-                        currOption.set('descripcion', currControl.getValue());
+                        currOption.set("descripcion", currControl.getValue());
                     }
                 }
 
 
-                currControl = me.lookupReference(type + currOption.get('idFelementoOpcion'));
+                currControl = me.lookupReference(type + currOption.get("idFelementoOpcion"));
 
-                localOption = me.localOptions.getById(currOption.get('idFelementoOpcion'));
-                DBOption = me.DBOptions.getById(currOption.get('idFelementoOpcion'));
+                localOption = me.localOptions.getById(currOption.get("idFelementoOpcion"));
+                DBOption = me.DBOptions.getById(currOption.get("idFelementoOpcion"));
 
 
                 if (DBOption !== null) {
-                    if (type == 'datepickerfield') {
-                        if (DBOption.get('fecha') !== currControl.getValue() ) 
-                            currOption.set('fecha', currControl.getValue());
+                    if (type == "datepickerfield") {
+                        if (DBOption.get("fecha") !== currControl.getValue() ) 
+                            currOption.set("fecha", currControl.getValue());
                     }
                     else {
-                        if (DBOption.get('descripcion') !== currControl.getValue() ) 
-                            currOption.set('descripcion', currControl.getValue());
+                        if (DBOption.get("descripcion") !== currControl.getValue() ) 
+                            currOption.set("descripcion", currControl.getValue());
                     }
                 } else {
                     if (localOption !== null) {
-                        if (type == 'datepickerfield') {
-                            if (localOption.get('fecha') !== currControl.getValue() )
-                                currOption.set('fecha', currControl.getValue());
+                        if (type == "datepickerfield") {
+                            if (localOption.get("fecha") !== currControl.getValue() )
+                                currOption.set("fecha", currControl.getValue());
                         }
                         else {
-                            if (localOption.get('descripcion') !== currControl.getValue())
-                                currOption.set('descripcion', currControl.getValue());
+                            if (localOption.get("descripcion") !== currControl.getValue())
+                                currOption.set("descripcion", currControl.getValue());
                         }
 
                     }
@@ -819,20 +826,20 @@
 
         // Filtro para obtener unicamente las opciones que pertenecen al elemento
         var optionsFilter = new Ext.util.Filter({
-            id: 'elementsFilter'
-            , property: 'idFormElemento'
+            id: "elementsFilter"
+            , property: "idFormElemento"
             , value: null
         });
 
 
         validationElements.each(function (validator, index) {
 
-            optionsFilter.setConfig('value', validator.get('idFormElemento'));
+            optionsFilter.setConfig("value", validator.get("idFormElemento"));
 
             data.addFilter(optionsFilter);
 
-            if (validator.get('requerido') == 'S' && ( validator.get('numRespuestas') == 0  || validator.get('minimo') > validator.get('numRespuestas') ))
-                invalidElements.push({ orden: validator.get('orden'), requerido: validator.get('requerido'), minimo: validator.get('minimo'), numRespuestas: validator.get('numRespuestas') });
+            if (validator.get("requerido") == "S" && ( validator.get("numRespuestas") == 0  || validator.get("minimo") > validator.get("numRespuestas") ))
+                invalidElements.push({ orden: validator.get("orden"), requerido: validator.get("requerido"), minimo: validator.get("minimo"), numRespuestas: validator.get("numRespuestas") });
 
         });
 
@@ -849,15 +856,15 @@
 
         validationElements.each(function (element, index) {
 
-            if (element.get('minimo') == null)
-                element.set('minimo', 0);
+            if (element.get("minimo") == null)
+                element.set("minimo", 0);
 
             // Agregar validacion respuestas minimas por elemento
-            if (element.get('numRespuestas') >= element.get('minimo')) {
+            if (element.get("numRespuestas") >= element.get("minimo")) {
 
                 elementosContestados++;
 
-                if (elementosContestados >= (me.formModel !== null ? me.formModel.get('minimo') : me.formUserModel.get('minimo'))) {
+                if (elementosContestados >= (me.formModel !== null ? me.formModel.get("minimo") : me.formUserModel.get("minimo"))) {
                     valido = true;
                 }
             }
@@ -874,12 +881,12 @@
 
         validationElements.each(function (validator, index) {
 
-            if (validator.get('elemento') == forms.utils.common.CONTROL_CODES.CHECK) {
-                if (validator.get('minimo') == null)
-                    validator.set('minimo', 0);
+            if (validator.get("elemento") == forms.utils.common.CONTROL_CODES.CHECK) {
+                if (validator.get("minimo") == null)
+                    validator.set("minimo", 0);
 
-                if  ( ( validator.get('requerido') == 'S' && (validator.get('numRespuestas') < validator.get('minimo')) ) || ( validator.get('requerido') == 'N' && validator.get('numRespuestas') > 0 &&  (validator.get('numRespuestas') < validator.get('minimo')) ) )
-                        invalidElements.push({ orden: validator.get('orden'), requerido: validator.get('requerido'), minimo: validator.get('minimo'), numRespuestas: validator.get('numRespuestas') });
+                if  ( ( validator.get("requerido") == "S" && (validator.get("numRespuestas") < validator.get("minimo")) ) || ( validator.get("requerido") == "N" && validator.get("numRespuestas") > 0 &&  (validator.get("numRespuestas") < validator.get("minimo")) ) )
+                        invalidElements.push({ orden: validator.get("orden"), requerido: validator.get("requerido"), minimo: validator.get("minimo"), numRespuestas: validator.get("numRespuestas") });
             
             }
 
@@ -892,15 +899,15 @@
         var me = this
             , validator = null
             , option = null
-            , validationElements = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.requiredElement') })
+            , validationElements = Ext.create("forms.store.localStore", { model: Ext.create("forms.model.requiredElement") })
         ;
 
         validationElements.loadData( me.allElements.getRange( 0, me.allElements.count() ) );
 
         // Filtro para obtener unicamente las opciones que pertenecen al elemento
         var optionsFilter = new Ext.util.Filter({
-            id: 'elementsFilter'
-            , property: 'idFormElemento'
+            id: "elementsFilter"
+            , property: "idFormElemento"
             , value: null
         });
 
@@ -908,23 +915,23 @@
 
         me.elements.each(function (element, index) {
 
-            optionsFilter.setConfig('value', element.get('idFormElemento'));
+            optionsFilter.setConfig("value", element.get("idFormElemento"));
 
             data.addFilter(optionsFilter);
 
-            validator = validationElements.getById(element.get('idFormElemento'));
+            validator = validationElements.getById(element.get("idFormElemento"));
 
-            if (element.get('elemento') == forms.utils.common.CONTROL_CODES.TEXT || element.get('elemento') == forms.utils.common.CONTROL_CODES.DATE) {
+            if (element.get("elemento") == forms.utils.common.CONTROL_CODES.TEXT || element.get("elemento") == forms.utils.common.CONTROL_CODES.DATE) {
                 option = data.getAt(0);
 
                 // Respuestas para el elemento
-                validator.set('numRespuestas', ((option.get('descripcion') == null || option.get('descripcion') == '') && option.get('fecha') == null) ? 0 : 1);
-            } else if (element.get('elemento') == forms.utils.common.CONTROL_CODES.SELECT) {
+                validator.set("numRespuestas", ((option.get("descripcion") == null || option.get("descripcion") == "") && option.get("fecha") == null) ? 0 : 1);
+            } else if (element.get("elemento") == forms.utils.common.CONTROL_CODES.SELECT) {
                 // Respuestas para el elemento
-                validator.set('numRespuestas', (data.count() == 0) ? 0 : 1);
+                validator.set("numRespuestas", (data.count() == 0) ? 0 : 1);
             } else
                 // Respuestas para el elemento
-                validator.set('numRespuestas', data.count());
+                validator.set("numRespuestas", data.count());
         });
 
         data.clearFilter();
@@ -936,40 +943,40 @@
     , localDataToDBData: function(){
         
         var me = this;
-        var processedData = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })  // Mantiene en cache las respuestas de los elementos
+        var processedData = Ext.create("forms.store.localStore", { model: Ext.create("forms.model.option") })  // Mantiene en cache las respuestas de los elementos
         var option = null;
         var element = null;
 
         me.localOptions.each(function (localOption, index) {
-            element = me.elements.getById(localOption.get('idFormElemento'));
+            element = me.elements.getById(localOption.get("idFormElemento"));
 
-            var DBOption = me.DBOptions.getById(localOption.get('idFelementoOpcion'));
+            var DBOption = me.DBOptions.getById(localOption.get("idFelementoOpcion"));
 
             if (DBOption) {
-                if (element.get('elemento') == forms.utils.common.CONTROL_CODES.DATE || element.get('elemento') == forms.utils.common.CONTROL_CODES.TEXT) {
+                if (element.get("elemento") == forms.utils.common.CONTROL_CODES.DATE || element.get("elemento") == forms.utils.common.CONTROL_CODES.TEXT) {
 
-                    option = Ext.create('forms.model.option', {
-                        idFelementoOpcion: localOption.get('idFelementoOpcion')
-                        , idFormElemento: localOption.get('idFormElemento')
-                        , orden: localOption.get('orden')
-                        , descripcion: localOption.get('descripcion')
-                        , fecha: localOption.get('fecha')
-                        , idElementData: localOption.get('idElementData')
-                        , action: 'U'
+                    option = Ext.create("forms.model.option", {
+                        idFelementoOpcion: localOption.get("idFelementoOpcion")
+                        , idFormElemento: localOption.get("idFormElemento")
+                        , orden: localOption.get("orden")
+                        , descripcion: localOption.get("descripcion")
+                        , fecha: localOption.get("fecha")
+                        , idElementData: localOption.get("idElementData")
+                        , action: "U"
                     });
 
                     processedData.add(option);
                 }
             } else {
 
-                option = Ext.create('forms.model.option', {
-                    idFelementoOpcion: localOption.get('idFelementoOpcion')
-                        , idFormElemento: localOption.get('idFormElemento')
-                        , orden: localOption.get('orden')
-                        , descripcion: localOption.get('descripcion')
-                        , fecha: localOption.get('fecha')
+                option = Ext.create("forms.model.option", {
+                    idFelementoOpcion: localOption.get("idFelementoOpcion")
+                        , idFormElemento: localOption.get("idFormElemento")
+                        , orden: localOption.get("orden")
+                        , descripcion: localOption.get("descripcion")
+                        , fecha: localOption.get("fecha")
                         , idElementData: null
-                        , action: 'N'
+                        , action: "N"
                 });
 
                 processedData.add(option);
@@ -978,17 +985,17 @@
 
 
         me.DBOptions.each(function (DBOption, index) {
-            var localOption = me.localOptions.getById(DBOption.get('idFelementoOpcion'));
+            var localOption = me.localOptions.getById(DBOption.get("idFelementoOpcion"));
 
             if (localOption == null || localOption == undefined) {
-                option = Ext.create('forms.model.option', {
-                    idFelementoOpcion: DBOption.get('idFelementoOpcion')
-                        , idFormElemento: DBOption.get('idFormElemento')
-                        , orden: DBOption.get('orden')
-                        , descripcion: DBOption.get('descripcion')
-                        , fecha: DBOption.get('fecha')
-                        , idElementData: DBOption.get('idElementData')
-                        , action: 'D'
+                option = Ext.create("forms.model.option", {
+                    idFelementoOpcion: DBOption.get("idFelementoOpcion")
+                        , idFormElemento: DBOption.get("idFormElemento")
+                        , orden: DBOption.get("orden")
+                        , descripcion: DBOption.get("descripcion")
+                        , fecha: DBOption.get("fecha")
+                        , idElementData: DBOption.get("idElementData")
+                        , action: "D"
                 });
 
                 processedData.add(option);
@@ -1004,7 +1011,7 @@
 
     , colectData: function ( isRemoteSave ) {
         var me = this
-            , loadMask = new Ext.LoadMask({ message: 'Recolectando datos...' })
+            , loadMask = new Ext.LoadMask({ message: "Recolectando datos..." })
             , data = []
             , element = null
             , optionsData = me.localDataToDBData();
@@ -1014,9 +1021,9 @@
         loadMask.show();
 
         var optionsFilter = new Ext.util.Filter({
-            id: 'unchangeFilter'
+            id: "unchangeFilter"
             , filterFn: function (model) {
-                return model.get('action') !== '';
+                return model.get("action") !== "";
             }
         });
 
@@ -1025,20 +1032,20 @@
         optionsData.addFilter(optionsFilter);
 
         optionsData.each(function (option, index) {
-            element = me.elements.getById(option.get('idFormElemento'));
+            element = me.elements.getById(option.get("idFormElemento"));
 
             data.push([
-                option.get('idFelementoOpcion')
-                , option.get('idFormElemento')
-                , option.get('descripcion')
-                , (forms.utils.common.CONTROL_CODES.DATE == element.get('elemento') ? (isRemoteSave ? forms.utils.common.serialize(option.get('fecha')) : option.get('fecha')) : null)
-                , option.get('action')
+                option.get("idFelementoOpcion")
+                , option.get("idFormElemento")
+                , option.get("descripcion")
+                , (forms.utils.common.CONTROL_CODES.DATE == element.get("elemento") ? (isRemoteSave ? forms.utils.common.serialize(option.get("fecha")) : option.get("fecha")) : null)
+                , option.get("action")
                 
             ]);
 
 
             if (!isRemoteSave) 
-                data[data.length - 1].push(option.get('idElementData'))
+                data[data.length - 1].push(option.get("idElementData"))
         });
 
         optionsData.clearFilter();
@@ -1052,7 +1059,7 @@
 
     , saveNewForm: function () {
         var me = this
-        , loadMask = new Ext.LoadMask({ message: 'Obteniendo datos del GPS...' })
+        , loadMask = new Ext.LoadMask({ message: "Obteniendo datos del GPS..." })
         ;
 
         // La verificacion de la configuración del GPS solo corre sobre Android y no se puede emular en web
@@ -1069,7 +1076,11 @@
                     }
                     , function (error) {
                         loadMask.hide();
-                        Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+
+                        Ext.Function.defer(function () {
+                            Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
+                        }, 100);
+                        
                     }
                     , {
                         enableHighAccuracy: true
@@ -1081,14 +1092,14 @@
 
                     Ext.Msg.confirm("Guardar formulario", "Es necesario tener activo el GPS del dispositivo para realizar esta acción. <br> ¿Desea activarlo ahora?"
                     , function (response, eOpts, msg) {
-                        if ('yes' == response) {
+                        if ("yes" == response) {
                             cordova.plugins.diagnostic.switchToLocationSettings();
                         }
                     });
                 }
             }, function (error) {
                 loadMask.hide();
-                Ext.Msg.alert('Formularios', "Ocurrió el siguiente error al intentar accesar a la configuración del GPS: " + error, Ext.emptyFn);
+                Ext.Msg.alert("Formularios", "Ocurrió el siguiente error al intentar accesar a la configuración del GPS: " + error, Ext.emptyFn);
             });
 
 
@@ -1103,7 +1114,7 @@
         var me = this;
         var cm = forms.utils.common.coockiesManagement();
         var idFormUsuario = forms.utils.common.guid();
-        var values = [idFormUsuario, me.formModel.get('idForm'), cm.get('idUsuario'), 'C', forms.utils.common.dateToUnixTime(new Date()), latitud, longitud];
+        var values = [idFormUsuario, me.formModel.get("idForm"), cm.get("idUsuario"), "C", forms.utils.common.dateToUnixTime(new Date()), latitud, longitud];
 
         sql = "INSERT INTO bformsUsuarios( idFormUsuario, idForm, idUsuario, estatus, fecha, latitud, longitud ) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
@@ -1116,13 +1127,20 @@
                          }
 
                         , function (tx, error) {
-                            Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                            Ext.Function.defer(function () {
+                                Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
+                            }, 100);
+
                         });
 
                 }
 
             , function (tx, error) {
-                Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+
+                Ext.Function.defer(function () {
+                    Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
+                }, 100);
+
             });
 
     }
@@ -1131,8 +1149,8 @@
 
         var me = this
             , data = me.colectData(false)
-            , sql = ''
-            , loadMask = new Ext.LoadMask({ message: 'Guardando los datos localmente...' })
+            , sql = ""
+            , loadMask = new Ext.LoadMask({ message: "Guardando los datos localmente..." })
             , idFormUsuario = (idFormUsuario || null)
             , textMessage = (textMessage || null)
         ;
@@ -1152,8 +1170,8 @@
         Ext.Array.each(data, function (row, index) {
             switch (row[4]) {
 
-                case 'U':
-                    updateArguments.push('SELECT ? AS idElementData, ? AS descripcion, ? AS fecha ');
+                case "U":
+                    updateArguments.push("SELECT ? AS idElementData, ? AS descripcion, ? AS fecha ");
 
                     updateValues.push(row[5].trim());
                     updateValues.push(row[2]);
@@ -1161,20 +1179,20 @@
 
                     break;
 
-                case 'N':
+                case "N":
                     // Se cambio la forma de hacer insert multiple de INSERT INTO Tabla () VALUES(), () ... () a usar subcounsulta ya que KitKat con SQlite Plugin no soportan esa funcionalidad
-                    insertArguments.push('SELECT ? AS idElementData, ? AS idFelementoOpcion, ? AS idFormUsuario, ? AS descripcion, ? AS fecha');
+                    insertArguments.push("SELECT ? AS idElementData, ? AS idFelementoOpcion, ? AS idFormUsuario, ? AS descripcion, ? AS fecha");
                     
                     insertValues.push(forms.utils.common.guid());
                     insertValues.push(row[0].trim());
-                    insertValues.push(( idFormUsuario == null ? me.formUserModel.get('idFormUsuario') : idFormUsuario )); // Es el Id relacionado con la tabla bformsUsuarios
+                    insertValues.push(( idFormUsuario == null ? me.formUserModel.get("idFormUsuario") : idFormUsuario )); // Es el Id relacionado con la tabla bformsUsuarios
                     insertValues.push(row[2]);
-                    insertValues.push(( row[3] !== null || row[3] !== '' ) ? forms.utils.common.dateToUnixTime(row[3]) : null  ) ;
+                    insertValues.push(( row[3] !== null || row[3] !== "" ) ? forms.utils.common.dateToUnixTime(row[3]) : null  ) ;
 
                     break;
 
-                case 'D':
-                    deleteArguments.push('SELECT ? AS idElementData');
+                case "D":
+                    deleteArguments.push("SELECT ? AS idElementData");
 
                     deleteValues.push(row[5].trim() );
 
@@ -1188,23 +1206,15 @@
 
         // Verificar si hay registros para actualizar
         if (updateArguments.length > 0) {
-            sql = updateArguments.join(' UNION ALL ');
+            sql = updateArguments.join(" UNION ALL ");
 
             // Aparentemente Android KitKat no soporta la funcionalidad de CTE del plugin SQLite, por eso se cambian las sentencias que las utilizan a subconsultas
 
-            //sql = 'WITH myCTE AS ( ' + sql + ') ' +
-            //                        'UPDATE elementsData SET  descripcion = (SELECT descripcion FROM myCTE WHERE myCTE.idElementData = elementsData.idElementData )' +
-            //                        ', fecha = (SELECT fecha FROM myCTE WHERE myCTE.idElementData = elementsData.idElementData )'
-
-            //sql = 'UPDATE elementsData SET  descripcion = (SELECT descripcion FROM (' + sql + ') AS myCTE WHERE myCTE.idElementData = elementsData.idElementData )' +
-            //                        ', fecha = (SELECT fecha FROM (' + sql + ') AS myCTE WHERE myCTE.idElementData = elementsData.idElementData )'
-
-
-            sql = 'UPDATE elementsData SET  descripcion = (SELECT descripcion FROM (' + sql + ') AS myCTE WHERE myCTE.idElementData = elementsData.idElementData )';
+            sql = "UPDATE elementsData SET  descripcion = (SELECT descripcion FROM (" + sql + ") AS myCTE WHERE myCTE.idElementData = elementsData.idElementData )";
                              
         } else {
             // Si no hay, se crea una consulta para obligar a execute a ejecutar el bloque
-            sql = 'SELECT ? AS exec;'
+            sql = "SELECT ? AS exec;"
             updateValues.push(0);
         }
 
@@ -1218,10 +1228,10 @@
 
                                  // Verificar si hay registros para actualizar
                                  if (updateArguments.length > 0) {
-                                     sql = 'UPDATE elementsData SET fecha = (SELECT fecha FROM (' + updateArguments.join(' UNION ALL ') + ') AS myCTE WHERE myCTE.idElementData = elementsData.idElementData )';
+                                     sql = "UPDATE elementsData SET fecha = (SELECT fecha FROM (" + updateArguments.join(" UNION ALL ") + ") AS myCTE WHERE myCTE.idElementData = elementsData.idElementData )";
                                  } else {
                                      // Si no hay, se crea una consulta para obligar a execute a ejecutar el bloque
-                                     sql = 'SELECT ? AS exec;'
+                                     sql = "SELECT ? AS exec;"
                                      updateValues = [];
                                      updateValues.push(0);
                                  }
@@ -1232,10 +1242,10 @@
                                         , function (tx, result) {
 
                                             if (insertArguments.length > 0) {
-                                                sql = 'INSERT INTO elementsData (idElementData, idFelementoOpcion, idFormUsuario, descripcion, fecha) SELECT idElementData, idFelementoOpcion, idFormUsuario, descripcion, fecha FROM (' + insertArguments.join(' UNION ALL ') + ')';
+                                                sql = "INSERT INTO elementsData (idElementData, idFelementoOpcion, idFormUsuario, descripcion, fecha) SELECT idElementData, idFelementoOpcion, idFormUsuario, descripcion, fecha FROM (" + insertArguments.join(" UNION ALL ") + ")";
                                             } else {
                                                 // Si no hay, se crea una consulta para obligar a execute a ejecutar el bloque
-                                                sql = 'SELECT ? AS exec;'
+                                                sql = "SELECT ? AS exec;"
                                                 insertValues.push(0);
                                             }
 
@@ -1245,10 +1255,10 @@
                                                 , function (tx, result) {
 
                                                     if (deleteArguments.length > 0) {
-                                                        sql = 'DELETE FROM elementsData WHERE idElementData = ( SELECT idElementData FROM (' + deleteArguments.join(' UNION ALL ') + ') AS myCTE WHERE idElementData = elementsData.idElementData) ';
+                                                        sql = "DELETE FROM elementsData WHERE idElementData = ( SELECT idElementData FROM (" + deleteArguments.join(" UNION ALL ") + ") AS myCTE WHERE idElementData = elementsData.idElementData) ";
                                                     } else {
                                                         // Si no hay, se crea una consulta para obligar a execute a ejecutar el bloque
-                                                        sql = 'SELECT ? AS exec;'
+                                                        sql = "SELECT ? AS exec;"
                                                         deleteValues.push(0);
                                                     }
 
@@ -1258,32 +1268,32 @@
 
                                                             loadMask.hide();
 
-                                                            me.getView().getParent().down('formsApplied').getController().getList();
+                                                            me.getView().getParent().down("formsApplied").getController().getList();
                                                             me.getView().destroy();
 
                                                             if (textMessage == null)
-                                                                Ext.Msg.alert('Formularios', 'El formulario se guardó correctamente', Ext.emptyFn);
+                                                                Ext.Msg.alert("Formularios", "El formulario se guardó correctamente", Ext.emptyFn);
                                                             else
-                                                                Ext.Msg.alert('Formularios', textMessage, Ext.emptyFn);
+                                                                Ext.Msg.alert("Formularios", textMessage, Ext.emptyFn);
                                                         }
 
                                                        , function (tx, error) {
                                                            loadMask.hide();
-                                                           Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                                                           Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
                                                        });
 
                                                 }
 
                                                , function (tx, error) {
                                                    loadMask.hide();
-                                                   Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                                                   Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
                                                });
 
                                         }
 
                                     , function (tx, error) {
                                         loadMask.hide();
-                                        Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                                        Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
                                     });
 
 
@@ -1291,14 +1301,14 @@
 
                             , function (tx, error) {
                                 loadMask.hide();
-                                Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                                Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
                             });
 
                     }
 
                 , function (tx, error) {
                     loadMask.hide();
-                    Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+                    Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
                 });
 
         // TERMINA EL PROCESO DE GUARDADO
@@ -1311,7 +1321,7 @@
 
         Ext.Msg.confirm("Confirmación", "¿Desea guardar los cambios realizados?"
             , function (response, eOpts, msg) {
-                if (response == 'yes') {
+                if (response == "yes") {
 
                     me.updateData();
 
@@ -1320,8 +1330,12 @@
                         me.saveNewForm();
                     else if (me.formUserModel !== null)
                         me.localSave();
-                    else
-                        Ext.Msg.alert('Formularios', 'No se ha podido iniciar el proceso de guardado.', Ext.emptyFn);
+                    else {
+                        Ext.Function.defer(function () {
+                            Ext.Msg.alert("Formularios", "No se ha podido iniciar el proceso de guardado.", Ext.emptyFn);
+                        }, 100);
+                    }
+                        
 
                 }
             });
@@ -1330,11 +1344,11 @@
 
     , finalizeFromLocal: function () {
         var me = this
-           , idFormUsuario = ( this.formUserModel !== null ? this.formUserModel.get('idFormUsuario').trim() : '-1')
+           , idFormUsuario = ( this.formUserModel !== null ? this.formUserModel.get("idFormUsuario").trim() : "-1")
             , savedData = []
             , unsavedData = me.colectData(true)
-            , idForm = (me.formUserModel !== null ? me.formUserModel.get('idForm') : me.formModel.get('idForm'))
-            , loadMask = new Ext.LoadMask({ message: 'Finalizando el formulario...' })
+            , idForm = (me.formUserModel !== null ? me.formUserModel.get("idForm") : me.formModel.get("idForm"))
+            , loadMask = new Ext.LoadMask({ message: "Finalizando el formulario..." })
         ;
 
         me.getView().add(loadMask);
@@ -1343,9 +1357,9 @@
         // Obtener los datos locales
         forms.globals.DBManagger.connection.transaction(
             function (tx) {
-                var sql = 'SELECT idFelementoOpcion, descripcion, fecha ' +
-                                'FROM elementsData ' +
-                                'WHERE idFormUsuario = ? ; '
+                var sql = "SELECT idFelementoOpcion, descripcion, fecha " +
+                                "FROM elementsData " +
+                                "WHERE idFormUsuario = ? ; "
 
                 tx.executeSql(sql, [idFormUsuario],
                     function (tx, records) {
@@ -1369,11 +1383,10 @@
                         var exist = false;
 
                         Ext.Array.each(unsavedData, function (unsavedOption, index) {
-                            if (unsavedOption[4] !== 'D') {
+                            if (unsavedOption[4] !== "D") {
 
                                 // Actualizar los datos guardados con los nuevos
                                 Ext.Array.each(savedData, function (savedOption, index) {
-                                    //if (unsavedOption[1] == savedOption[1] && unsavedOption[0] == savedOption[0]) {
                                     if (unsavedOption[0] == savedOption[0]) {
                                         savedOption[1] = unsavedOption[2];
                                         savedOption[2] = unsavedOption[3];
@@ -1385,7 +1398,6 @@
                                 exist = false;
                                 // Agregar las repuestas nuevas
                                 Ext.Array.each(savedData, function (savedOption, index) {
-                                    //if (unsavedOption[1] == savedOption[1] && unsavedOption[0] == savedOption[0]) {
                                     if (unsavedOption[0] == savedOption[0]) {
                                         exist = true;
                                         return;
@@ -1428,7 +1440,10 @@
                                         }
                                         , function (error) {
                                             loadMask.hide();
-                                            Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+
+                                            Ext.Function.defer(function () {
+                                                Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
+                                            }, 100);
 
                                         }
                                         , {
@@ -1441,7 +1456,7 @@
 
                                         Ext.Msg.confirm("Descargar formulario", "Es necesario tener activo el GPS del dispositivo para realizar esta acción. <br> ¿Desea activarlo ahora?"
                                         , function (response, eOpts, msg) {
-                                            if ('yes' == response) {
+                                            if ("yes" == response) {
                                                 cordova.plugins.diagnostic.switchToLocationSettings();
                                             }
                                         });
@@ -1450,7 +1465,7 @@
 
                                 }, function (error) {
                                     loadMask.hide();
-                                    Ext.Msg.alert('Formularios', "Ocurrió el siguiente error al intentar accesar a la configuración del GPS: " + error, Ext.emptyFn);
+                                    Ext.Msg.alert("Formularios", "Ocurrió el siguiente error al intentar accesar a la configuración del GPS: " + error, Ext.emptyFn);
                                     
                                 });
 
@@ -1461,61 +1476,69 @@
 
 
                         } else {
-                            var modelRequest = Ext.create('forms.model.model', { NAME: 'sps_forms_finalizar', idSession: cm.get('idSession'), idForm: idForm, latitud: me.formUserModel.get('latitud'), longitud: me.formUserModel.get('longitud'), datos: savedData })
+                            var modelRequest = Ext.create("forms.model.model", { NAME: "sps_forms_finalizar", idSession: cm.get("idSession"), idForm: idForm, latitud: me.formUserModel.get("latitud"), longitud: me.formUserModel.get("longitud"), datos: savedData })
 
                             // Finalización de encuesta previamente guardada
                             forms.utils.common.request(
                                     modelRequest.getData()
                                     , function (response, opts) {
 
-                                        var data = JSON.parse((response.responseText == '' ? "{}" : response.responseText));
+                                        var data = JSON.parse((response.responseText == "" ? "{}" : response.responseText));
 
-                                        if (data.type !== 'EXCEPTION') {
+                                        if (data.type !== "EXCEPTION") {
                                             // Refrescar el listado de la vista principal
 
                                             forms.globals.DBManagger.connection.transaction(
                                                 function (tx) {
                                                     var sql = "UPDATE bformsUsuarios SET estatus = ?, fechaFinalizacion = ? WHERE idFormUsuario = ? ;";
 
-                                                    tx.executeSql(sql, ['F', forms.utils.common.dateToUnixTime(new Date()), idFormUsuario],
+                                                    tx.executeSql(sql, ["F", forms.utils.common.dateToUnixTime(new Date()), idFormUsuario],
                                                         function (tx, result) {
                                                             loadMask.hide();
 
 
                                                             // Si al momento de finalizar se hizo un cambio en los datos que estaban guardados, este cambio tambien debe reflejarse en la DB local
-                                                            me.localSave(null, 'La finalización del formulario se realizo con exito.');
-
-
-                                                            //Ext.Msg.alert('Forms', 'La finalización del formulario se realizo con exito.', Ext.emptyFn);
-
-                                                            //me.getView().getParent().down('formsApplied').getController().getList();
-
-                                                            //// Cerrar la vista de detalle
-                                                            //me.getView().destroy();
+                                                            me.localSave(null, "La finalización del formulario se realizo con exito.");
 
                                                         }
 
                                                         , function (tx, error) {
                                                             loadMask.hide();
-                                                            Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+
+                                                            Ext.Function.defer(function () {
+                                                                Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
+                                                            }, 100);
+
                                                         })
                                                 }
                                                 , function (error) {
                                                     loadMask.hide();
-                                                    Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+
+                                                    Ext.Function.defer(function () {
+                                                        Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
+                                                    }, 100);
+
                                                 });
 
 
                                         } else {
                                             loadMask.hide();
-                                            Ext.Msg.alert('Error al realizar la solicitud', data.mensajeUsuario, Ext.emptyFn);
+
+                                            Ext.Function.defer(function () {
+                                                Ext.Msg.alert("Error al realizar la solicitud", data.mensajeUsuario, Ext.emptyFn);
+                                            }, 100);
                                         }
 
 
                                     }
                                     , function (response, opts) {
                                         loadMask.hide();
-                                        Ext.Msg.alert('Formularios', "Error no esperado", Ext.emptyFn);
+
+                                        Ext.Function.defer(function () {
+                                            Ext.Msg.alert("Formularios", "Error no esperado", Ext.emptyFn);
+                                        }, 100);
+
+                                        
                                     });
 
                         }
@@ -1525,12 +1548,19 @@
 
                     , function (tx, error) {
                         loadMask.hide();
-                        Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+
+                        Ext.Function.defer(function () {
+                            Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
+                        }, 100);
+                        
                     })
             }
             , function (error) {
                 loadMask.hide();
-                Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+
+                Ext.Function.defer(function () {
+                    Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
+                }, 100);
             });
 
     }
@@ -1539,8 +1569,8 @@
     , saveAndFinalize: function (idForm, savedData, latitud, longitud) {
         var me = this
             , cm = forms.utils.common.coockiesManagement()
-            , modelRequest = Ext.create('forms.model.model', { NAME: 'sps_forms_finalizar', idSession: cm.get('idSession'), idForm: idForm, latitud: latitud, longitud: longitud, datos: savedData })
-            , loadMask = new Ext.LoadMask({ message: 'Guardando y finalizando el formulario...' });
+            , modelRequest = Ext.create("forms.model.model", { NAME: "sps_forms_finalizar", idSession: cm.get("idSession"), idForm: idForm, latitud: latitud, longitud: longitud, datos: savedData })
+            , loadMask = new Ext.LoadMask({ message: "Guardando y finalizando el formulario..." });
 
         me.getView().add(loadMask);
 
@@ -1550,14 +1580,14 @@
             modelRequest.getData()
             , function (response, opts) {
 
-                var data = JSON.parse((response.responseText == '' ? "{}" : response.responseText));
+                var data = JSON.parse((response.responseText == "" ? "{}" : response.responseText));
 
-                if (data.type !== 'EXCEPTION') {
+                if (data.type !== "EXCEPTION") {
                     // Refrescar el listado de la vista principal
 
 
                     var idFormUsuario = forms.utils.common.guid();
-                    var values = [idFormUsuario, idForm, cm.get('idUsuario'), 'F', forms.utils.common.dateToUnixTime(new Date()), forms.utils.common.dateToUnixTime(new Date()), latitud, longitud];
+                    var values = [idFormUsuario, idForm, cm.get("idUsuario"), "F", forms.utils.common.dateToUnixTime(new Date()), forms.utils.common.dateToUnixTime(new Date()), latitud, longitud];
 
                     sql = "INSERT INTO bformsUsuarios( idFormUsuario, idForm, idUsuario, estatus, fecha, fechaFinalizacion, latitud, longitud ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -1568,32 +1598,48 @@
                                      , function (tx, result) {
                                          loadMask.hide();
 
-                                         me.localSave(idFormUsuario, 'La finalización del formulario se realizó con exito.');
+                                         me.localSave(idFormUsuario, "La finalización del formulario se realizó con exito.");
                                      }
 
                                     , function (tx, error) {
                                         loadMask.hide();
-                                        Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+
+                                        Ext.Function.defer(function () {
+                                            Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
+                                        }, 100);
+
+                                        
                                     });
 
                             }
 
                         , function (tx, error) {
                             loadMask.hide();
-                            Ext.Msg.alert('Formularios', error.message, Ext.emptyFn);
+
+                            Ext.Function.defer(function () {
+                                Ext.Msg.alert("Formularios", error.message, Ext.emptyFn);
+                            }, 100);
                         });
 
 
                 } else {
                     loadMask.hide();
-                    Ext.Msg.alert('Error al realizar la solicitud', data.mensajeUsuario, Ext.emptyFn);
+
+                    Ext.Function.defer(function () {
+                        Ext.Msg.alert("Error al realizar la solicitud", data.mensajeUsuario, Ext.emptyFn);
+                    }, 100);
+                    
                 }
 
 
             }
             , function (response, opts) {
                 loadMask.hide();
-                Ext.Msg.alert('Formularios', 'Error no esperado', Ext.emptyFn);
+
+                Ext.Function.defer(function () {
+                    Ext.Msg.alert("Formularios", "Error no esperado", Ext.emptyFn);
+                }, 100);
+                
                 
             });
     }
@@ -1601,60 +1647,90 @@
 
      , finalize: function () {
         var me = this
-            , text = ''
-        ;
+            , text = ""
+         ;
 
-        Ext.Msg.confirm("Finalizar formulario", "Una vez realizada esta acción ya no será posible modificar las respuestas del formulario. ¿Esta seguro de finalizar el formulario?"
-                    , function (response, eOpts, msg) {
-                        if (response == 'yes') {
-                            me.updateData();
-                            var validationElements = me.updateNumResponse(me.localOptions);
 
-                            if (me.validateMinResponse(validationElements)) {
+        Ext.Msg.show({
+            title: "Finalizar",
+            message: "Una vez realizada esta acción ya no será posible modificar las respuestas del formulario. ¿Esta seguro de finalizar el formulario?",
+            width: 300,
+            buttons: Ext.MessageBox.OKCANCEL,
+            fn: function (buttonId, a, b, c) {
+                if (buttonId == "ok") {
+                    me.updateData();
+                    var validationElements = me.updateNumResponse(me.localOptions);
 
-                                var invalidElements = me.validateResponse(me.localOptions, validationElements);
+                    if (me.validateMinResponse(validationElements)) {
 
-                                
-                                if (invalidElements.length > 0) {
-                                    text = '<table style="border-collapse:collapse; border:1px solid #6E6E6E;width:100%"> <tr style="border:1px solid #6E6E6E;"> <td>N° </td> <td style="border:1px solid #6E6E6E;">Es Requerida </td> <td>Resp. requeridas </td> <tr>'
+                        var invalidElements = me.validateResponse(me.localOptions, validationElements);
 
-                                    Ext.Array.each(invalidElements, function (item, index) {
-                                        text = text + '<tr style="border:1px solid #6E6E6E;"> <td>' + item.orden + '</td> <td style="border:1px solid #6E6E6E;">' + (item.requerido == 'S' ? 'Si' : 'No') + '</td> <td>' + item.minimo + '</td>' + '</tr>';
+
+                        if (invalidElements.length > 0) {
+                            text = "<table style='border-collapse:collapse; border:1px solid #6E6E6E;width:100%'> <tr style='border:1px solid #6E6E6E;'> <td>N° </td> <td style='border:1px solid #6E6E6E;'>Es Requerida </td> <td>Resp. requeridas </td> <tr>"
+
+                            Ext.Array.each(invalidElements, function (item, index) {
+                                text = text + "<tr style='border:1px solid #6E6E6E;'> <td>" + item.orden + "</td> <td style='border:1px solid #6E6E6E;'>" + (item.requerido == "S" ? "Si" : "No") + "</td> <td>" + item.minimo + "</td>" + "</tr>";
+                            });
+
+                            text = text + "</table>";
+
+                            Ext.Function.defer(function () {
+                                Ext.Msg.show({
+                                    title: "Validación del formulario",
+                                    message: "Los siguientes elementos son requeridos. <br>" + text,
+                                    width: 300,
+                                    buttons: Ext.MessageBox.OK
+                                });
+                            }, 100);
+
+                        } else {
+
+                            invalidElements = me.validateMinResponseForElement(validationElements);
+
+                            if (invalidElements.length > 0) {
+                                text = "<table style='border-collapse:collapse; border:1px solid #6E6E6E;width:100%'> <tr style='border:1px solid #6E6E6E;'> <td>N° </td> <td style='border:1px solid #6E6E6E;'>Requerida </td> <td>Min. Resp. </td> <td style='border:1px solid #6E6E6E;'>Num. Resp. </td> <tr>"
+
+                                Ext.Array.each(invalidElements, function (item, index) {
+                                    text = text + "<tr style='border:1px solid #6E6E6E;'> <td>" + item.orden + "</td> <td style='border:1px solid #6E6E6E;'>" + (item.requerido == "S" ? "Si" : "No") + "</td> <td>" + item.minimo + "</td> <td style='border:1px solid #6E6E6E;'>" + item.numRespuestas + "</td>" + "</tr>";
+                                });
+
+                                text = text + "</table>";
+
+
+                                Ext.Function.defer(function () {
+                                    Ext.Msg.show({
+                                        title: "Validación del formulario",
+                                        message: "Es requerido que responda el mínimo de respuestas solicitadas. <br>" + text,
+                                        width: 300,
+                                        buttons: Ext.MessageBox.OK
                                     });
-
-                                    text = text + '</table>'
-
-                                    Ext.Msg.alert('Validación del formulario', 'Los siguientes elementos son requeridos: <br>' + text, Ext.emptyFn);
-
-                                } else {
-
-                                    invalidElements = me.validateMinResponseForElement(validationElements);
-
-                                    if (invalidElements.length > 0) {
-                                        text = '<table style="border-collapse:collapse; border:1px solid #6E6E6E;width:100%"> <tr style="border:1px solid #6E6E6E;"> <td>N° </td> <td style="border:1px solid #6E6E6E;">Requerida </td> <td>Min. Resp. </td> <td style="border:1px solid #6E6E6E;">Num. Resp. </td> <tr>'
-
-                                        Ext.Array.each(invalidElements, function (item, index) {
-                                            text = text + '<tr style="border:1px solid #6E6E6E;"> <td>' + item.orden + '</td> <td style="border:1px solid #6E6E6E;">' + (item.requerido == 'S' ? 'Si' : 'No') + '</td> <td>' + item.minimo + '</td> <td style="border:1px solid #6E6E6E;">' + item.numRespuestas + '</td>' + '</tr>';
-                                        });
-
-                                        text = text + '</table>'
-
-                                        Ext.Msg.alert('Validación del formulario', 'Es requerido que responda el mínimo de respuestas solicitadas. <br>' + text, Ext.emptyFn);
+                                }, 100);
 
 
-                                    } else {
-                                            me.finalizeFromLocal();
-                                    }
-                                }
                             } else {
-                                var minimo = (me.formModel == null ? me.formUserModel.get('minimo') : me.formModel.get('minimo'));
-
-                                Ext.Msg.alert('Validación del formulario', 'Es requerido que responda al menos ' + minimo + ' pregunta' + (minimo > 1 ? 's' : '') + ' del formulario.', Ext.emptyFn);
-
+                                me.finalizeFromLocal();
                             }
-
                         }
-                    });
+                    } else {
+                        var minimo = (me.formModel == null ? me.formUserModel.get("minimo") : me.formModel.get("minimo"));
+
+
+                        Ext.Function.defer(function () {
+                            Ext.Msg.show({
+                                title: "Validación del formulario",
+                                message: "Es requerido que responda al menos " + minimo + " pregunta" + (minimo > 1 ? "s" : "") + " del formulario.",
+                                width: 300,
+                                buttons: Ext.MessageBox.OK
+                            });
+                        }, 100);
+
+                    }
+
+                }
+            }
+        });
+
     }
 
 
@@ -1668,12 +1744,12 @@
 
         if (me.formUserModel !== null) {
 
-            if (me.formUserModel.get('estatus') == 'F') {
+            if (me.formUserModel.get("estatus") == "F") {
                 me.exit();
             } else {
                 Ext.Msg.confirm("Cerrar formulario", "La información que no se haya guardado se perderá. ¿Desea continuar?"
                           , function (response, eOpts, msg) {
-                              if (response == 'yes') {
+                              if (response == "yes") {
                                   me.exit();
                               }
                           });
@@ -1681,7 +1757,7 @@
         } else {
             Ext.Msg.confirm("Cerrar formulario", "La información que no se haya guardado se perderá. ¿Desea continuar?"
                      , function (response, eOpts, msg) {
-                         if (response == 'yes') {
+                         if (response == "yes") {
                              me.exit();
                          }
                      });
@@ -1694,7 +1770,7 @@
         forms.globals.DBManagger.connection.close(function () {
             
         }, function (error) {
-            Ext.Msg.alert('Formularios', "Error al intentar cerrar la base de datos : " + error.message, Ext.emptyFn);
+            Ext.Msg.alert("Formularios", "Error al intentar cerrar la base de datos : " + error.message, Ext.emptyFn);
         });
     }
 

@@ -403,9 +403,9 @@
      *
      */
     "bootstrap": {
-        "base": "${app.dir}../../",  /*  Agregar la libreria a desarrollo  */
+        /* "base": "${app.dir}../../",   Agregar la libreria a desarrollo  */
 
-		/* "base": "${app.dir}",      para agregar la libreria a APP */
+		"base": "${app.dir}",     /* para agregar la libreria a APP */
         
         "microloader": "bootstrap.js",
         "css": "bootstrap.css"

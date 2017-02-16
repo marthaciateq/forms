@@ -14,7 +14,12 @@
     , fullscreen: true
     , iconCls: 'x-fa fa-users'
     
-
+    //, tools: [{
+    //    type: 'close',
+    //    handler: function (panel) {
+    //        panel.getController().exitButton_tap();
+    //    }
+    //}]
     , items: [
         {
             xtype: 'fieldset'
@@ -52,6 +57,8 @@
                                }
                            }
 
+          
+
                     ]
 
 
@@ -61,7 +68,6 @@
             ]
         }
 
-        
     ]
 
 

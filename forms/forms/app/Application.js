@@ -1,4 +1,4 @@
-﻿/**
+/**
  * The main application class. An instance of this class is created by app.js when it
  * calls Ext.application(). This is the ideal place to handle application launch and
  * initialization details.
@@ -30,9 +30,18 @@ Ext.define('forms.Application', {
     * Se aprovecha este evento para inicializar variables propias para configurar la app.
     */
     , init: function (app) {
-        var SERVER = 'http://200.33.18.35' // Es la IP del Servidor de DB al que se va a conectar la APP
+        var SERVER = 'http://192.168.137.249:88' // Es la IP del Servidor de DB al que se va a conectar la APP
+        var me = this;
 
-        this.RUN_MODES = { DEVELOPMENT: /forms/, PRODUCTION: SERVER + '/' } // Los modos en los que puede correr la APP, este objeto se inicializa en el metodo init de la app
+        this.RUN_MODES = { DEVELOPMENT: '/forms/', PRODUCTION: SERVER + '/' } // Los modos en los que puede correr la APP, este objeto se inicializa en el metodo init de la app
+
+
+        document.addEventListener("deviceready", onDeviceReady, false);
+
+        // Cordova is ready 
+        function onDeviceReady() {
+            me.createFormsDB();
+        }
     }
 
     /**
@@ -65,7 +74,7 @@ Ext.define('forms.Application', {
             xtype: loggedIn ? 'app-main' : 'login'
         });
 
-        this.createFormsDB();
+        //this.createFormsDB();
 
     }
 
@@ -73,6 +82,9 @@ Ext.define('forms.Application', {
         var _1KB = 1024 // bytes
         _1MB = _1KB * 1024 // 1024 kbytes
         DB_SIZE = _1MB * 2;  // 2 MB
+
+        //window.__webSqlDebugModeOn = true;
+        //window.__webSqlUseSyncConstructor = true;
 
         forms.globals.DBManagger.connection = window.openDatabase("forms", "1.0", "forms DB", DB_SIZE);
         forms.globals.DBManagger.connection.transaction(this.createTablesDB, this.errorCreate, this.successCreate);
@@ -101,7 +113,7 @@ Ext.define('forms.Application', {
 
           tx.executeSql('CREATE TABLE IF NOT EXISTS formsUsuarios (idForm TEXT, idUsuario TEXT);');
 
-          tx.executeSql('CREATE TABLE IF NOT EXISTS bformsUsuarios (idFormUsuario TEXT PRIMARY KEY, idForm TEXT, idUsuario TEXT, estatus INT, fecha TEXT, fechaFinalizacion TEXT, latitud TEXT, longitud TEXT);');
+          tx.executeSql('CREATE TABLE IF NOT EXISTS bformsUsuarios (idFormUsuario TEXT PRIMARY KEY, idForm TEXT, idUsuario TEXT, estatus TEXT, fecha TEXT, fechaFinalizacion TEXT, latitud TEXT, longitud TEXT);');
           tx.executeSql('CREATE TABLE IF NOT EXISTS elementsData (idElementData TEXT PRIMARY KEY, idFormUsuario TEXT, idFelementoOpcion TEXT, descripcion TEXT, fecha TEXT);');
 
 

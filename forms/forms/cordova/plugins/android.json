@@ -7,12 +7,25 @@
         "files": {}
     },
     "installed_plugins": {
+        "cordova-plugin-geolocation": {
+            "PACKAGE_NAME": "mx.ciateq.forms"
+        },
+        "cordova-plugin-websql": {
+            "PACKAGE_NAME": "mx.ciateq.forms"
+        },
         "cordova-plugin-whitelist": {
             "PACKAGE_NAME": "mx.ciateq.forms"
         },
         "cordova-sqlite-storage": {
             "PACKAGE_NAME": "mx.ciateq.forms"
+        },
+        "cordova.plugins.diagnostic": {
+            "PACKAGE_NAME": "mx.ciateq.forms"
         }
     },
-    "dependent_plugins": {}
+    "dependent_plugins": {
+        "cordova-plugin-compat": {
+            "PACKAGE_NAME": "mx.ciateq.forms"
+        }
+    }
 }

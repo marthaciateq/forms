@@ -26,31 +26,6 @@ Ext.define('forms.view.formsApplied.formsApplied', {
         //initialize: 'getList'
     }
 
-    
-
-
-    //, tools: [
-    //    {
-    //        type: 'next'
-    //        , itemId: 'edit'
-    //        , iconCls: 'fa fa-edit'
-    //        , callback: function (panel) {
-    //            var controller = panel.getController();
-
-    //            controller.applyNewForm();
-    //        }
-    //    }
-
-    //    , {
-    //        itemId: 'close'
-    //        , type: 'close'
-    //        , hidden: false
-    //        , callback: function (panel) {
-    //            panel.getController().close();
-    //        }
-    //    }
-
-    //]
 
     , items: [
             {
@@ -87,6 +62,7 @@ Ext.define('forms.view.formsApplied.formsApplied', {
                 , items: [
                     {
                         xtype: 'grid'
+                        , layout: 'fit'
                         , reference: 'formsAppliedGrid'
                         , itemiId: 'formsAppliedGrid'
                         , emptyText: 'No se ha realizado ninguna aplicación de este formulario.'

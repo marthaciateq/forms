@@ -8,3 +8,8 @@ C:\ciateq\forms\forms\LibBase\bin\Debug\LibBase.pdb
 C:\ciateq\forms\forms\LibBase\obj\Debug\LibBase.csprojResolveAssemblyReference.cache
 C:\ciateq\forms\forms\LibBase\obj\Debug\LibBase.dll
 C:\ciateq\forms\forms\LibBase\obj\Debug\LibBase.pdb
+C:\ciateq\formsProyect\forms\LibBase\bin\Debug\LibBase.dll
+C:\ciateq\formsProyect\forms\LibBase\bin\Debug\LibBase.pdb
+C:\ciateq\formsProyect\forms\LibBase\obj\Debug\LibBase.csprojResolveAssemblyReference.cache
+C:\ciateq\formsProyect\forms\LibBase\obj\Debug\LibBase.dll
+C:\ciateq\formsProyect\forms\LibBase\obj\Debug\LibBase.pdb

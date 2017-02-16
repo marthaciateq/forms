@@ -1,4 +1,4 @@
-﻿/**
+/**
  * This class is the controller for the main view for the application. It is specified as
  * the "controller" of the Main view class.
  *
@@ -100,21 +100,21 @@ Ext.define('forms.view.main.MainController', {
 
         var service = Ext.create('forms.model.model', { NAME: 'sps_forms_listar', idSession: idSession, start: 0, limit: 20 })
             , formsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.form') })
-            , me = this
+            , me = this;
 
-        me.lookupReference('encuestasGrid').setStore(formsStore)
-
+        me.lookupReference('encuestasGrid').setStore(formsStore);
+        
         forms.utils.common.request(
             service.getData()
             , function (response, opts) {
-                var data = JSON.parse(response.responseText)
+                var data = JSON.parse((response.responseText == '') ? '{}' : response.responseText)
                 , remoteData = []
                 , text = ''
                 , localItem = null;
                 
 
                 if (data.type !== 'EXCEPTION') {
-
+                    
                     // Por alguna razón, en Android 4.4 kitkat, el Ext.Array.each ni el Ext.Object.each funcionan sobre el resultado devuelto por SQLite SQLResultSetRowList
                     // y no agrega los items que se recuperan del dispositivo local
                     for (var index = 0; index < localData.length; index++) {
@@ -125,7 +125,7 @@ Ext.define('forms.view.main.MainController', {
                     
 
                     var exist = false;
-
+                    
                     Ext.Array.each(data, function (item, index) {
 
                         exist = me.lookupReference('encuestasGrid').getStore().findRecord('idForm', item.idForm, 0, false, true, true);
@@ -135,9 +135,10 @@ Ext.define('forms.view.main.MainController', {
                     });
 
 
-                    if (remoteData.length > 0)
-                        me.lookupReference('encuestasGrid').getStore().loadData(remoteData, true);
+                    me.lookupReference('encuestasGrid').getStore().loadData(remoteData, true);
 
+                    
+                    
                     me.lookupReference('encuestasGrid').getStore().sort('fCaducidad', 'DESC');
 
                     // Ocultar mascara
@@ -162,7 +163,7 @@ Ext.define('forms.view.main.MainController', {
         );
     }
 
-
+    
     , getLocalData: function () {
 
         var me = this
@@ -174,17 +175,16 @@ Ext.define('forms.view.main.MainController', {
         loadMask.show();
 
         var _1KB = 1024 // bytes
-        _1MB = _1KB * 1024 // 1024 kbytes
-        DB_SIZE = _1MB * 2;  // 2 MB
+        , _1MB = _1KB * 1024 // 1024 kbytes
+        , DB_SIZE = _1MB * 2;  // 2 MB
 
         if (!forms.globals.DBManagger.connection)
             forms.globals.DBManagger.connection = window.openDatabase("forms", "1.0", "forms DB", DB_SIZE);
 
         forms.globals.DBManagger.connection.transaction(
             function (tx) {
-                var cm = forms.utils.common.coockiesManagement()
+                var cm = forms.utils.common.coockiesManagement();
                 var sql = "SELECT forms.idForm, titulo, descripcion, minimo, estatus, fcaducidad AS 'fCaducidad', 'L' AS origen  FROM forms INNER JOIN formsUsuarios ON forms.idForm = formsUsuarios.idForm WHERE idUsuario = ?;";
-                //var sql ="SELECT * FROM forms;"
 
                 tx.executeSql(sql, [cm.get('idUsuario')],
                     function (tx, result) {
@@ -204,185 +204,6 @@ Ext.define('forms.view.main.MainController', {
             });
 
     }
-
-
-
-    //, initDownload: function (idForm, latitud, longitud) {
-    //    var me = this
-    //     , loadMask = new Ext.LoadMask({ message: 'Obteniendo formularios...' });
-
-    //    me.getView().add(loadMask);
-
-    //    loadMask.show();
-
-
-    //    var cm = forms.utils.common.coockiesManagement()
-    //   , modelRequest = Ext.create('forms.model.form', { NAME: 'sps_forms_download', idForm: idForm, idSession: cm.get('idSession'), latitud: latitud, longitud: longitud })
-    //   , elementsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.element') })
-    //   , optionsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.option') })
-    //    ;
-
-    //    forms.utils.common.request(
-    //        modelRequest.getData()
-    //        , function (response, opts) {
-    //            var data = JSON.parse((response.responseText == '') ? '{}' : response.responseText);
-
-    //            if (data.type !== 'EXCEPTION') {
-    //                var form = Ext.create('forms.model.form', data[0][0]);
-
-    //                // Preguntas
-    //                elementsStore.loadData(data[1]);
-
-    //                // Posibles respuestas
-    //                optionsStore.loadData(data[2]);
-
-    //                arrDataValues = [form.get('idForm'), form.get('titulo'), form.get('descripcion'), form.get('minimo'), '1', forms.utils.common.dateToUnixTime(form.get('fCaducidad'))];
-    //                forms.globals.DBManagger.connection.transaction(
-    //                    function (tx) {
-    //                        tx.executeSql('INSERT INTO forms (idForm, titulo, descripcion, minimo, estatus, fcaducidad) VALUES (?, ?, ?, ?, ?, ?)', arrDataValues
-    //                             , function (tx, result) {
-
-
-    //                                 var idFormUsuario = forms.utils.common.guid();
-    //                                 var values = [idForm, cm.get('idUsuario')];
-
-    //                                 sql = "INSERT INTO formsUsuarios( idForm, idUsuario ) VALUES (?, ?)";
-    //                                 tx.executeSql(sql, values
-    //                                     , function (tx, result) {
-    //                                         // Guardar los datos en la DB Local
-    //                                         var sql = ''
-    //                                         , idForm = modelRequest.get('idForm').trim()
-    //                                         , arrDataValues = []
-    //                                         , elementsArguments = []
-    //                                         , optionsArguments = []
-    //                                         , dataArguments = []
-    //                                         , queryElements = 'INSERT INTO formsElementos (idFormElemento, idForm, elemento, descripcion, orden, minimo, requerido) VALUES '
-    //                                         , queryOptions = 'INSERT INTO fElementosOpciones (idFelementoOpcion, idFormElemento, descripcion, orden) VALUES '
-
-
-    //                                         elementsStore.each(function (element, index) {
-    //                                             elementsArguments.push('(?, ?, ?, ?, ?, ?, ?)');
-
-    //                                             arrDataValues.push(element.get('idFormElemento').trim());
-    //                                             arrDataValues.push(modelRequest.get('idForm').trim());
-    //                                             arrDataValues.push(element.get('elemento'));
-    //                                             arrDataValues.push(element.get('descripcion'));
-    //                                             arrDataValues.push(element.get('orden'));
-    //                                             arrDataValues.push(element.get('minimo'));
-    //                                             arrDataValues.push(element.get('requerido'));
-    //                                         });
-
-
-    //                                         queryElements += elementsArguments.join(', ');
-
-    //                                         tx.executeSql(queryElements, arrDataValues
-    //                                             , function (tx, result) {
-
-    //                                                 // vaciar el array de valores
-    //                                                 arrDataValues = [];
-
-    //                                                 optionsStore.each(function (option, index) {
-    //                                                     optionsArguments.push('(?, ?, ?, ?)');
-    //                                                     arrDataValues.push(option.get('idFelementoOpcion').trim());
-    //                                                     arrDataValues.push(option.get('idFormElemento').trim());
-    //                                                     arrDataValues.push(option.get('descripcion'));
-    //                                                     arrDataValues.push(option.get('orden'));
-    //                                                 });
-
-    //                                                 queryOptions += optionsArguments.join(',');
-
-    //                                                 tx.executeSql(queryOptions, arrDataValues
-    //                                                     , function (tx, result) {
-
-    //                                                         // Registrar la descarga exitosa
-    //                                                         var modelRequest = Ext.create('forms.model.form', { NAME: 'sps_forms_download_commit', idForm: idForm, idSession: cm.get('idSession'), latitud: 0, longitud: 0 });
-
-    //                                                         forms.utils.common.request(
-    //                                                            modelRequest.getData()
-    //                                                            , function (response, opts) {
-
-    //                                                                var data = JSON.parse((response.responseText == '') ? '{}' : response.responseText);
-
-    //                                                                if (data.type !== 'EXCEPTION') {
-
-    //                                                                    loadMask.hide();
-
-    //                                                                    Ext.Msg.alert('Proceso de descarga.', 'La descarga se realizó con exito.', Ext.emptyFn);
-
-    //                                                                    me.getList();
-
-    //                                                                } else {
-    //                                                                    loadMask.hide();
-    //                                                                    Ext.Msg.alert('Error al realizar la solicitud', data.mensajeUsuario, Ext.emptyFn);
-    //                                                                }
-
-    //                                                            }
-    //                                                            , function (response, opts) {
-    //                                                                // Ocultar mascara
-    //                                                                loadMask.hide();
-    //                                                                alert("Error no esperado");
-    //                                                            });
-
-
-    //                                                     }
-
-    //                                                     , function (tx, error) {
-    //                                                         // Ocultar mascara
-    //                                                         loadMask.hide();
-    //                                                         alert(error.message);
-    //                                                     });
-
-    //                                             }
-
-    //                                            , function (tx, error) {
-    //                                                // Ocultar mascara
-    //                                                loadMask.hide();
-    //                                                alert(error.message);
-    //                                            });
-
-
-    //                                     }
-
-    //                                     , function (tx, error) {
-    //                                         // Ocultar mascara
-    //                                         loadMask.hide();
-    //                                         alert(error.message);
-    //                                     });
-
-
-    //                             }
-
-    //                            , function (tx, error) {
-    //                                // Ocultar mascara
-    //                                loadMask.hide();
-    //                                alert(error.message);
-    //                            });
-
-    //                    }
-
-    //                , function (error) {
-    //                    // Ocultar mascara
-    //                    loadMask.hide();
-    //                    alert(error.message);
-    //                });
-
-
-    //            } else {
-    //                // Ocultar mascara
-    //                loadMask.hide();
-    //                Ext.Msg.alert('Error al realizar la solicitud', data.mensajeUsuario, Ext.emptyFn);
-    //            }
-
-
-    //        }
-    //        , function (response, opts) {
-    //            // Ocultar mascara
-    //            loadMask.hide();
-    //            alert("Error no esperado");
-    //        });
-
-    //}
-
 
 
     , initDownload: function (idForm, latitud, longitud) {
@@ -420,7 +241,6 @@ Ext.define('forms.view.main.MainController', {
                             tx.executeSql('INSERT INTO forms (idForm, titulo, descripcion, minimo, estatus, fcaducidad) VALUES (?, ?, ?, ?, ?, ?)', arrDataValues
                                  , function (tx, result) {
 
-
                                      var idFormUsuario = forms.utils.common.guid();
                                      var values = [idForm, cm.get('idUsuario')];
 
@@ -435,7 +255,7 @@ Ext.define('forms.view.main.MainController', {
                                              , optionsArguments = []
                                              , dataArguments = []
                                              , queryElements = ''//'INSERT INTO formsElementos (idFormElemento, idForm, elemento, descripcion, orden, minimo, requerido) VALUES '
-                                             , queryOptions = 'INSERT INTO fElementosOpciones (idFelementoOpcion, idFormElemento, descripcion, orden) VALUES '
+                                             , queryOptions = 'INSERT INTO fElementosOpciones (idFelementoOpcion, idFormElemento, descripcion, orden) VALUES ';
 
 
                                              elementsStore.each(function (element, index) {
@@ -690,12 +510,12 @@ Ext.define('forms.view.main.MainController', {
                    ;
 
                    var service = Ext.create('forms.model.model', { NAME: 'sps_forms_inactive', idSession: idSession })
-                       , formsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.form') })
+                       , formsStore = Ext.create('forms.store.localStore', { model: Ext.create('forms.model.form') });
 
                    forms.utils.common.request(
                        service.getData()
                        , function (response, opts) {
-                           var data = JSON.parse(response.responseText)
+                           var data = JSON.parse((response.responseText == '') ? '{}' : response.responseText)
                            , deleteValues = []
                            , deleteArguments = [];
 
@@ -717,7 +537,7 @@ Ext.define('forms.view.main.MainController', {
                                        sql = 'DELETE FROM forms WHERE idForm = ( SELECT idForm FROM (' + deleteArguments.join(' UNION ALL ') + ') AS myCTE WHERE idForm = forms.idForm) ';
                                    } else {
                                        // Si no hay, se crea una consulta para obligar a execute a ejecutar el bloque
-                                       sql = 'SELECT ? AS exec;'
+                                       sql = 'SELECT ? AS exec;';
                                        deleteValues.push(0);
                                    }
 
@@ -744,7 +564,7 @@ Ext.define('forms.view.main.MainController', {
                                                                sql = 'DELETE FROM formsUsuarios WHERE idForm = ( SELECT idForm FROM (' + deleteArguments.join(' UNION ALL ') + ') AS myCTE WHERE idForm = formsUsuarios.idForm) ';
                                                            } else {
                                                                // Si no hay, se crea una consulta para obligar a execute a ejecutar el bloque
-                                                               sql = 'SELECT ? AS exec;'
+                                                               sql = 'SELECT ? AS exec;';
                                                                deleteValues.push(0);
                                                            }
 
@@ -760,7 +580,7 @@ Ext.define('forms.view.main.MainController', {
                                                                         ') ';
                                                                    } else {
                                                                        // Si no hay, se crea una consulta para obligar a execute a ejecutar el bloque
-                                                                       sql = 'SELECT ? AS exec;'
+                                                                       sql = 'SELECT ? AS exec;';
                                                                        deleteValues.push(0);
                                                                    }
 
@@ -771,7 +591,7 @@ Ext.define('forms.view.main.MainController', {
                                                                                sql = 'DELETE FROM bformsUsuarios WHERE idForm = ( SELECT idForm FROM (' + deleteArguments.join(' UNION ALL ') + ') AS myCTE WHERE idForm = bformsUsuarios.idForm) ';
                                                                            } else {
                                                                                // Si no hay, se crea una consulta para obligar a execute a ejecutar el bloque
-                                                                               sql = 'SELECT ? AS exec;'
+                                                                               sql = 'SELECT ? AS exec;';
                                                                                deleteValues.push(0);
                                                                            }
 
@@ -839,6 +659,7 @@ Ext.define('forms.view.main.MainController', {
                            }
                        }
                        , function (response, opts) {
+                           loadMask.hide();
                            Ext.Msg.alert('Formularios', 'Error no esperado.', Ext.emptyFn);
                        });
 
